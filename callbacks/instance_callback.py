@@ -113,7 +113,7 @@ def register_instance_callbacks(app, dataset_obj):
             ctx = callback_context
             input_trigger = get_input_trigger(ctx)
             if input_trigger == 'generate_errors' or input_trigger == 'visualize_instance':
-                return "", "", go.Figure(), None
+                return "", "", go.Figure()
             if n_clicks == 0:
                 raise PreventUpdate
             elif n_clicks > 0:
