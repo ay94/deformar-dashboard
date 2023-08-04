@@ -1,5 +1,5 @@
 from . import json, torch, pd, pkl, nn, px, AutoModel, \
-    distance, np
+    distance, np, defaultdict
 
 
 class FileHandler():
@@ -56,6 +56,7 @@ class FileHandler():
         with open(self.cr_fn(path)) as json_file:
             data = json.load(json_file)
         return data
+
 
 
 class TokenAmbiguity:
