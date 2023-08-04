@@ -60,7 +60,7 @@ def get_layout():
                 )
 
             ]),
-
+        html.H3("Decision Boundary Scatter Plot", style={'text-align': 'center'}),
         html.Div(
             style={"width": "30%", 'display': 'inline-block', },
             children=[
@@ -97,7 +97,7 @@ def get_layout():
                 }),
 
             ]),
-        html.H3("Decision Boundary Scatter Plot", style={'text-align': 'center'}),
+
         dcc.Loading(
             id='decision_loading',
             type='default',
@@ -105,7 +105,7 @@ def get_layout():
                 dcc.Graph(id="decision_scatter", figure=go.Figure()),
             ]
         ),
-
+        html.H3("Decision Boundary Measures Scatter Plot", style={'text-align': 'center'}),
         html.Div(
             [
                 dcc.Dropdown(
@@ -149,7 +149,6 @@ def get_layout():
                     'cursor': 'pointer',
                     'border-radius': '4px'
                 }),
-
                 dcc.Checklist(
                     id='include_ignored',
                     options=[
@@ -160,7 +159,6 @@ def get_layout():
             ],
             style={"width": "30%", 'display': 'inline-block', }
         ),
-        html.H3("Decision Boundary Measures Scatter Plot", style={'text-align': 'center'}),
         dcc.Loading(
             id='measure_loading',
             type='default',
@@ -168,7 +166,7 @@ def get_layout():
                 dcc.Graph(id="measure_scatter", figure=go.Figure()),
             ]
         ),
-
+        html.H3("Centroid Scatter Plot", style={'text-align': 'center'}),
         html.Div(
             [
                 dcc.Dropdown(
@@ -199,7 +197,6 @@ def get_layout():
             ],
             style={"width": "30%", 'display': 'inline-block', }
         ),
-        html.H3("Centroid Scatter Plot", style={'text-align': 'center'}),
         dcc.Loading(
             id='centroid_loading',
             type='default',
@@ -230,13 +227,13 @@ def get_layout():
                 dcc.Graph(id="selection_token_ambiguity", figure=go.Figure()),
             ]
         ),
-
+        html.H3("Training Impact", style={'text-align': 'center'}),
         html.Div(
             style={
                 'display': 'flex',
                 'justify-content': 'center',
                 'align-items': 'center',
-                'height': '100vh'
+                'height': '30vh'
             },
             children=[
                 html.Button('Show Impact', id='show_impact', n_clicks=0, style={
@@ -267,9 +264,7 @@ def get_layout():
                     id='impact_loading',
                     type='default',
                     children=[
-                        dcc.Graph(id="impact_plot", figure=go.Figure().update_layout(
-                                title="Training Impact View"
-                            )),
+                        dcc.Graph(id="impact_plot", figure=go.Figure()),
                     ]
                 ),
             ]
