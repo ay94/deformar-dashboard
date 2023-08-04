@@ -150,6 +150,7 @@ def get_layout():
                 page_current=0,
                 page_size=10,
             ),
+            html.H3("Performance Scatter Plot", style={'text-align': 'center'}),
             html.Div(
                 children=[
 
@@ -195,7 +196,6 @@ def get_layout():
                 ],
                 style={"width": "30%", 'display': 'inline-block'}
             ),
-            html.H3("Performance Scatter Plot", style={'text-align': 'center'}),
             dcc.Loading(
                 id='error_context_loading',
                 type='default',
@@ -204,6 +204,7 @@ def get_layout():
                 ]
             ),
             html.Div(id="error_example_ids", style={"display": "none"}),
+            html.H3("Error Only Scatter", style={'text-align': 'center'}),
             html.Div(
                 children=[
 
@@ -217,7 +218,6 @@ def get_layout():
                 ],
                 style={"width": "30%", 'display': 'inline-block'}
             ),
-            html.H3("Error Only Scatter", style={'text-align': 'center'}),
             dcc.Loading(
                 id='error_loading',
                 type='default',
@@ -225,6 +225,7 @@ def get_layout():
                     dcc.Graph(id="error_scatter", figure=go.Figure()),
                 ]
             ),
+            html.H3("Selection Token Ambiguity", style={'text-align': 'center'}),
             html.Div(
                 children=[
                     dcc.Dropdown(
@@ -245,6 +246,7 @@ def get_layout():
                 ],
                 style={'display': 'flex', 'justify-content': 'center', 'align-items': 'center'}
             ),
+            html.H3("Selection Token Similarity Matrix", style={'text-align': 'center'}),
             html.Div(
                 children=[
                     dcc.Dropdown(
