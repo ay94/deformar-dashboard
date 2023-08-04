@@ -8,6 +8,8 @@ from transformers import AutoTokenizer, AutoModel
 from arabert.preprocess import ArabertPreprocessor
 
 from utils.analysisUtils import TokenAmbiguity, FineTuneConfig, TCDataset, TCModel
+from . import copy, os, time, torch, pd, pio, AutoModel, AutoTokenizer, \
+    ArabertPreprocessor, defaultdict
 
 Datasets = {
     'ANERCorp_CamelLab': {
@@ -17,7 +19,7 @@ Datasets = {
     },
 
     'conll2003': {
-        'model_name': {'bert': 'bert-base-cased',
+        'model_name': {'bert_cased': 'bert-base-cased',
                        'mbert': 'bert-base-multilingual-cased'},
         'splits': {'Train': 'train', 'Val': 'val', 'Test': 'test'}
     },
@@ -39,20 +41,9 @@ class DatasetConfig:
         self.loaded = False
         self.initialized = False
 
-    #     self.dummy_df = None
-    # def create_dummy_data(self):
-    #     data = {
-    #         'Name': ['John', 'Jane', 'Michael', 'Emily', 'William'],
-    #         'Age': [28, 24, 32, 27, 31],
-    #         'Country': ['USA', 'Canada', 'UK', 'Australia', 'USA'],
-    #         'Salary': [50000, 60000, 70000, 55000, 75000],
-    #     }
-    #
-    #     # Create a DataFrame
-    #     df = pd.DataFrame(data)
-    #     return df
 
     def load_data(self, fh, dataset_name, model_name, model_path, split):
+
 
         start_time = time.time()
         self.created = self.created_(fh.cr_fn(f'{dataset_name}/initialization'))
@@ -65,7 +56,7 @@ class DatasetConfig:
         corpora = self.file_handler.load_json(f'corpora.json')
         self.corpus = corpora[self.dataset_name]
 
-        train_subwords = self.file_handler.read_json(f'{self.dataset_name}/train_subwords.json')
+        train_subwords = self.defaultify((self.file_handler.read_json(f'{self.dataset_name}/train_subwords.json')))
         self.token_ambiguity = TokenAmbiguity(train_subwords)
 
         analysis_df = pd.read_json(
@@ -219,6 +210,14 @@ class DatasetConfig:
         else:
             # The directory is empty
             return False
+
+    def defaultify(self, dictionary):
+        output = defaultdict(list)
+        for key, values in dictionary.items():
+            for value in values:
+                output[key].append(value)
+        return output
+
 
 
 class InstanceLevel:
