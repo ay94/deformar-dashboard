@@ -360,7 +360,7 @@ def register_decision_callbacks(app, dataset_obj):
     def show_impact(n_clicks, view):
         if n_clicks == 0:
             raise PreventUpdate
-        elif n_clicks > 0:
+        elif n_clicks > 0 and dataset_obj.loaded:
             if view == 'activations':
                 impact_plot = dataset_obj.activations.update_layout(
                                 title="Training Impact View"
@@ -368,6 +368,8 @@ def register_decision_callbacks(app, dataset_obj):
             else:
                 impact_plot = dataset_obj.weights
 
-        return impact_plot.update_layout(
-                                title="Training Impact View"
-                            )
+            return impact_plot.update_layout(
+                                    title="Training Impact View"
+                                )
+        else:
+            raise PreventUpdate
