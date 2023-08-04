@@ -3,6 +3,7 @@ from . import html, dcc, go, dash_table
 
 def get_layout():
     return dcc.Tab(label='Instance Level Analysis', value="instance", children=[
+        html.H1("Instance Analysis", style={'text-align': 'center'}),
         html.Div(
             style={'display': 'flex',
                    'justify-content': 'center',
@@ -78,7 +79,7 @@ def get_layout():
             ),
 
         ]),
-
+        html.H3("Instance Scatter Plot", style={'text-align': 'center'}),
         html.Div(
             children=[
                 dcc.Loading(
@@ -91,7 +92,7 @@ def get_layout():
             ],
             style={'margin-bottom': '20px'}
         ),
-
+        html.H3("Example Attention / Activation Plots", style={'text-align': 'center'}),
         html.Div(
             style={'display': 'flex', 'justify-content': 'center', 'align-items': 'center', 'height': '50vh'},
             children=[
@@ -256,6 +257,7 @@ def get_layout():
 
         html.Div(
             children=[
+                html.H3("Example Scatter Plot", style={'text-align': 'center'}),
                 dcc.Loading(
                     id='example_loading',
                     type='default',
@@ -263,6 +265,7 @@ def get_layout():
                         dcc.Graph(id="example_scatter", figure=go.Figure()),
                     ]
                 ),
+                html.H3("Examples Scatter Plot Only Scatter", style={'text-align': 'center'}),
                 dcc.Loading(
                     id='examples_loading',
                     type='default',
@@ -274,6 +277,7 @@ def get_layout():
             ],
             style={'margin-bottom': '20px'}
         ),
+        html.H3("Example Token Similarity Matrix", style={'text-align': 'center'}),
         html.Div(
             children=[
                 dcc.Dropdown(
@@ -307,7 +311,7 @@ def get_layout():
             ],
             style={'display': 'flex', 'justify-content': 'center', 'align-items': 'center'}
         ),
-
+        html.H3("Instance --> Example Similarity Bar Chart", style={'text-align': 'center'}),
         html.Div(
             children=[
                 dcc.Dropdown(
