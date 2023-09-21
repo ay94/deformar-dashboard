@@ -233,7 +233,7 @@ def get_layout():
                 'display': 'flex',
                 'justify-content': 'center',
                 'align-items': 'center',
-                'height': '30vh'
+                'height': '50vh'
             },
             children=[
                 html.Button('Show Impact', id='show_impact', n_clicks=0, style={
