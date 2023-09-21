@@ -12,7 +12,7 @@ def get_layout():
                     "height": "30vh",  # Adjust the height as needed
                 },
                 children=[
-                    html.Button('Initialize Error Tab', id='initialize_error_tab', n_clicks=0, style={
+                    html.Button('Initialize Performance Tab', id='initialize_error_tab', n_clicks=0, style={
                         'background-color': '#3DAFA8',
                         'color': 'white',
                         'border': 'none',
