@@ -5,7 +5,7 @@ from utils.appUtils import Datasets
 
 def get_layout():
     dataset_names = list(Datasets.keys())
-    return dcc.Tab(label='Dataset Characteristics', value="dataset", children=[
+    return dcc.Tab(label='Load Dataset', value="load", children=[
         html.Div(
             style={'display': 'flex',
                    'justify-content': 'center',
@@ -121,59 +121,7 @@ def get_layout():
                 html.Div(id='dataset_table_container'),
 
             ]),
-        html.Div(
-            style={
-                "display": "flex",
-                "align-items": "center",
-                "justify-content": "center",
-                "height": "30vh",  # Adjust the height as needed
-            },
-            children=[
-                html.Button('Initialize Characteristics Tab', id='initialize_characteristics_tab', n_clicks=0, style={
-                    'background-color': '#3DAFA8',
-                    'color': 'white',
-                    'border': 'none',
-                    'padding': '10px 20px',
-                    'text-align': 'center',
-                    'text-decoration': 'none',
-                    'display': 'inline-block',
-                    'font-size': '16px',
-                    'margin': '4px 2px',
-                    'cursor': 'pointer',
-                    'border-radius': '4px'
-                }),
-            ]),
 
-        html.H3("Statistical Summary", style={'text-align': 'center'}),
 
-        html.Div(
-            style={"width": "30%", 'display': 'inline-block', },
-            children=[
-                dcc.Dropdown(
-                    id='statistical_columns',
-                    multi=True,
-                    placeholder="Select column...",
-                ),
-                html.Button('Generate Statistical Summary', id='generate_summary', n_clicks=0, style={
-                    'background-color': '#3DAFA8',
-                    'color': 'white',
-                    'border': 'none',
-                    'padding': '10px 20px',
-                    'text-align': 'center',
-                    'text-decoration': 'none',
-                    'display': 'inline-block',
-                    'font-size': '16px',
-                    'margin': '4px 2px',
-                    'cursor': 'pointer',
-                    'border-radius': '4px'
-                }),
-                dcc.Checklist(
-                    id='include_ignored',
-                    options=[
-                        {'label': 'Include IGNORED Tokens', 'value': 'checked'}
-                    ],
-                    value=[]
-                ),
-            ]),
 
     ])
