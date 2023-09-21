@@ -265,7 +265,7 @@ def get_layout():
                         dcc.Graph(id="example_scatter", figure=go.Figure()),
                     ]
                 ),
-                html.H3("Examples Scatter Plot Only Scatter", style={'text-align': 'center'}),
+                html.H3("Examples Scatter Plot", style={'text-align': 'center'}),
                 dcc.Loading(
                     id='examples_loading',
                     type='default',
