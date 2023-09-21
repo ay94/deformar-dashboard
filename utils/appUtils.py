@@ -26,6 +26,16 @@ Datasets = {
 
 }
 
+all_columns = [
+    'global_id', 'token_id', 'word_id', 'sen_id', 'token_ids', 'token_ids', 'label_ids',
+    'first_tokens_freq', 'first_tokens_consistency', 'first_tokens_inconsistency',
+    'words', 'wordpieces', 'tokens', 'first_tokens', 'truth', 'pred', 'agreement',
+    'losses', 'x', 'y', 'tokenization_rate', 'token_entropy', 'word_entropy', 'tr_entity',
+    'pr_entity', 'error_type', 'prediction_entropy', 'confidences', 'variability',
+    'O', 'B-PERS', 'I-PERS', 'B-ORG', 'I-ORG', 'B-LOC', 'I-LOC', 'B-MISC', 'I-MISC',
+    '3_clusters', '4_clusters', '9_clusters', 'truth_token_score', 'pred_token_score', 'pre_x', 'pre_y'
+]
+
 
 class DatasetConfig:
 
@@ -41,9 +51,7 @@ class DatasetConfig:
         self.loaded = False
         self.initialized = False
 
-
     def load_data(self, fh, dataset_name, model_name, model_path, split):
-
 
         start_time = time.time()
         self.created = self.created_(fh.cr_fn(f'{dataset_name}/initialization'))
@@ -63,11 +71,16 @@ class DatasetConfig:
             self.file_handler.cr_fn(f'{self.dataset_name}/{self.split}/{self.split}_analysis_df.jsonl.gz'),
             lines=True
         )
+
+        pre_df = pd.read_json(
+            self.file_handler.cr_fn(f'{self.dataset_name}/{self.split}/{self.split}_pre_df.jsonl.gz'),
+            lines=True
+        )
         token_score = pd.read_json(
             self.file_handler.cr_fn(f'{self.dataset_name}/{self.split}/{self.split}_token_score_df.jsonl.gz'),
             lines=True
         )
-        self.analysis_df = self.clean_analysis_df(analysis_df, token_score)
+        self.analysis_df = self.clean_analysis_df(analysis_df, token_score, pre_df)
 
         if self.split != 'train':
             self.light_train_df = pd.read_json(
@@ -75,7 +88,8 @@ class DatasetConfig:
                 lines=True
             )
         else:
-            self.light_train_df = self.analysis_df.copy()[["token_ids", "words", "agreement", "truth", "pred", "x", "y"]]
+            self.light_train_df = self.analysis_df.copy()[
+                ["token_ids", "words", "agreement", "truth", "pred", "x", "y"]]
 
         self.centroid_df = pd.read_json(
             self.file_handler.cr_fn(f'{self.dataset_name}/{self.split}/{self.split}_centroid_df.jsonl.gz'),
@@ -106,7 +120,7 @@ class DatasetConfig:
         self.dataset_end_time = (time.time() - start_time) / 60
         self.loaded = True
 
-    def clean_analysis_df(self, analysis_df, token_score):
+    def clean_analysis_df(self, analysis_df, token_score, pre_df):
         analysis_df['sen_id'] = analysis_df['sen_id'].astype(str)
         analysis_df['word_id'] = analysis_df['word_id'].astype(str)
         analysis_df.set_index('global_id', inplace=True)
@@ -114,7 +128,8 @@ class DatasetConfig:
         analysis_df.loc[token_score.index, ['truth_token_score', 'pred_token_score']] = token_score[
             ['truth_token_score', 'pred_token_score']]
         analysis_df.reset_index(inplace=True)
-        return analysis_df
+        merged_df = analysis_df.merge(pre_df, on='global_id')
+        return merged_df
 
     def create_view_df(self):
         selected_columns = ['global_id', 'sen_id', 'token_ids', 'first_tokens', 'words', 'agreement', 'truth', 'pred',
@@ -217,7 +232,6 @@ class DatasetConfig:
             for value in values:
                 output[key].append(value)
         return output
-
 
 
 class InstanceLevel:
