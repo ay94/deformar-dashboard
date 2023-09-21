@@ -97,9 +97,12 @@ def register_decision_callbacks(app, dataset_obj):
 
     @app.callback(
         Output("decision_scatter", "figure"),
-        Input('generate_decision', 'n_clicks'),
-        Input("save_measure_points", "children"),
-        State('decision_columns', 'value'),
+        [
+            Input('generate_decision', 'n_clicks'),
+            Input("save_measure_points", "children"),
+            State('decision_columns', 'value'),
+        ],
+
         prevent_initial_call=True
     )
     def create_decision_plot(n_clicks, saved_points, columns):
@@ -137,12 +140,15 @@ def register_decision_callbacks(app, dataset_obj):
 
     @app.callback(
         Output("measure_scatter", "figure"),
-        Input('generate_measure', 'n_clicks'),
-        Input('include_ignored', 'value'),
-        Input("save_decision_points", "children"),
-        State('measure_columns', 'value'),
-        State('measure_x', 'value'),
-        State('measure_y', 'value'))
+        [
+            Input('generate_measure', 'n_clicks'),
+            Input('include_ignored', 'value'),
+            Input("save_decision_points", "children"),
+            State('measure_columns', 'value'),
+            State('measure_x', 'value'),
+            State('measure_y', 'value')
+        ]
+    )
     def create_measure_plot(n_clicks, include_ignored, saved_points, measure_color, x, y):
         if n_clicks == 0:
             raise PreventUpdate
@@ -197,7 +203,7 @@ def register_decision_callbacks(app, dataset_obj):
     def save_decision_selection(selectedData, include_ignored, n_clicks):
         ctx = callback_context
         input_trigger = get_input_trigger(ctx)
-        if input_trigger == 'reset':
+        if input_trigger == 'reset_decision':
             return None
         if selectedData is None or len(selectedData['points']) == 0:
             raise PreventUpdate
@@ -296,7 +302,7 @@ def register_decision_callbacks(app, dataset_obj):
         elif measure_points is not None:
             points = pd.read_json(measure_points, orient="split")
         else:
-            return [None, go.Figure()]
+            return [go.Figure(), None]
 
         selection_datatable = dash_table.DataTable(
             id='selecting',
@@ -337,14 +343,14 @@ def register_decision_callbacks(app, dataset_obj):
             Input("save_measure_points", "children"),
         ],
     )
-    def token_ambiguity(scatter_points, measure_points):
+    def token_ambiguity(decision_points, measure_points):
 
-        if scatter_points is not None:
-            points = pd.read_json(scatter_points, orient="split")
+        if decision_points is not None:
+            points = pd.read_json(decision_points, orient="split")
         elif measure_points is not None:
             points = pd.read_json(measure_points, orient="split")
-        if len(points) < 1:
-            raise PreventUpdate
+        else:
+            return go.Figure()
 
         return dataset_obj.token_ambiguity.visualize_ambiguity(list(points['first_tokens'].unique()))
 
@@ -355,7 +361,6 @@ def register_decision_callbacks(app, dataset_obj):
             State("impact_view", "value"),
         ]
 
-
     )
     def show_impact(n_clicks, view):
         if n_clicks == 0:
@@ -363,13 +368,13 @@ def register_decision_callbacks(app, dataset_obj):
         elif n_clicks > 0 and dataset_obj.loaded:
             if view == 'activations':
                 impact_plot = dataset_obj.activations.update_layout(
-                                title="Training Impact View"
-                            )
+                    title="Training Impact View"
+                )
             else:
                 impact_plot = dataset_obj.weights
 
             return impact_plot.update_layout(
-                                    title="Training Impact View"
-                                )
+                title="Training Impact View"
+            )
         else:
             raise PreventUpdate
