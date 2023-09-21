@@ -6,7 +6,7 @@ from . import identify_mistakes, color_tokens, color_map, min_max, \
     get_input_trigger, default_view
 from . import px, go, head_view, model_view, torch, cosine_similarity, \
     tqdm, np, pd
-from . import AttentionSimilarity
+from . import AttentionSimilarity, Datasets
 
 
 def register_instance_callbacks(app, dataset_obj):
@@ -14,10 +14,8 @@ def register_instance_callbacks(app, dataset_obj):
         [
             Output('initialize_instance', 'children'),
             Output('compare_status', 'children'),
-            Output('examples_status', 'children'),
             Output('similarity_status', 'children'),
         ],
-
         Input("Tabs", "value"),
 
     )
@@ -28,7 +26,7 @@ def register_instance_callbacks(app, dataset_obj):
             else:
                 div = html.Div('Please Initialize the Model', style={'color': 'red'})
 
-            return div, div, div, div
+            return div, div, div
         else:
             raise PreventUpdate
 
@@ -57,7 +55,7 @@ def register_instance_callbacks(app, dataset_obj):
                 example_labels = dataset_obj.corpus[dataset_obj.split][int(example_id)][2]
                 label_map = dataset_obj.corpus['labels']
             except:
-                instance_df = dataset_obj.analysis_df[dataset_obj.analysis_df['sen_id'] == 0].copy()
+                instance_df = dataset_obj.analysis_df[dataset_obj.analysis_df['sen_id'] == '0'].copy()
                 example_words = dataset_obj.corpus[dataset_obj.split][0][1]
                 example_labels = dataset_obj.corpus[dataset_obj.split][0][2]
                 label_map = dataset_obj.corpus['labels']
@@ -169,15 +167,21 @@ def register_instance_callbacks(app, dataset_obj):
     def populate_split(n_clicks):
         if dataset_obj.loaded:
             if n_clicks > 0:
-                columns = [
-                    {'label': 'Train', 'value': 'train'},
-                    {'label': dataset_obj.split.capitalize(), 'value': dataset_obj.split},
-                ]
+                if dataset_obj.split == 'train':
+                    columns = [
+                        {'label': 'Train', 'value': 'train'},
+                    ]
+                else:
+                    columns = [
+                        {'label': 'Train', 'value': 'train'},
+                        {'label': dataset_obj.split.capitalize(), 'value': dataset_obj.split},
+                    ]
                 return columns
             else:
                 return []
         else:
             raise PreventUpdate
+
 
     @app.callback(
         [
@@ -185,6 +189,7 @@ def register_instance_callbacks(app, dataset_obj):
             Output('example_tokens_similarity', 'options'),
             Output('example_token_comparison', 'options'),
             Output('examples_scatter', 'figure'),
+            Output('examples_status', 'children'),
         ],
         [
             Input("load_token_data", "n_clicks"),
@@ -198,7 +203,9 @@ def register_instance_callbacks(app, dataset_obj):
             raise PreventUpdate
         elif n_clicks > 0:
             if split == 'train':
-                data = dataset_obj.analysis_train_df.copy()
+                data = dataset_obj.light_train_df.copy()
+                data['first_tokens'] = data['token_ids'].apply(lambda x: x.split('@#')[0])
+                data['sen_id'] = data['token_ids'].apply(lambda x: x.split('@#')[1])
             else:
                 data = dataset_obj.analysis_df.copy()
             try:
@@ -218,7 +225,7 @@ def register_instance_callbacks(app, dataset_obj):
                     symbol='agreement',
                     color_discrete_map=color_map,
                     template='ggplot2',
-                    hover_data=['token_ids', 'agreement', 'confidences', 'variability', 'truth', 'pred'])
+                    hover_data=['token_ids',"words", "agreement", "truth", "pred"])
                 examples_fig.update_layout(scattermode="group")
                 examples_fig.update_xaxes(
                     range=x_range
@@ -253,7 +260,7 @@ def register_instance_callbacks(app, dataset_obj):
         elif n_clicks > 0:
             label_map = dataset_obj.corpus['labels']
             if split == 'train':
-                data = dataset_obj.analysis_train_df.copy()
+                data = dataset_obj.light_train_df.copy()
                 examples = dataset_obj.corpus[split]
             else:
                 data = dataset_obj.analysis_df.copy()
@@ -285,7 +292,7 @@ def register_instance_callbacks(app, dataset_obj):
                 symbol='agreement',
                 color_discrete_map=color_map,
                 template='ggplot2',
-                hover_data=['token_ids', 'agreement', 'confidences', 'variability', 'truth', 'pred'])
+                hover_data=['token_ids', 'agreement', 'truth', 'pred'])
             example_fig.update_layout(scattermode="group")
             example_fig.update_xaxes(
                 range=x_range
@@ -318,7 +325,7 @@ def register_instance_callbacks(app, dataset_obj):
                 else:
                     chosen_tokens = current_tokens
                 if split == 'train':
-                    output_data = dataset_obj.analysis_train_df.copy()
+                    output_data = dataset_obj.light_train_df.copy()
                     split_data = dataset_obj.instanceLevel.train_dataset
                 else:
                     output_data = dataset_obj.analysis_df.copy()
@@ -357,7 +364,7 @@ def register_instance_callbacks(app, dataset_obj):
             State("example_split", "value"),
         ]
     )
-    def compare_instance_similarity(n_clicks, tokens, current_tokens, example_token, value, split):
+    def compare_example_similarity(n_clicks, tokens, current_tokens, example_token, value, split):
         if dataset_obj.initialized and tokens is not None:
             if n_clicks == 0 or len(tokens) < 1:
                 raise PreventUpdate
@@ -381,7 +388,7 @@ def register_instance_callbacks(app, dataset_obj):
                 compare_output = dataset_obj.finetuned.bert(**compare_inputs)
                 compare_hidden_state = compare_output.last_hidden_state[0][int(locator[2])].detach().numpy()
                 if split == 'train':
-                    output_data = dataset_obj.analysis_train_df.copy()
+                    output_data = dataset_obj.light_train_df.copy()
                     split_data = dataset_obj.instanceLevel.train_dataset
                 else:
                     output_data = dataset_obj.analysis_df.copy()
