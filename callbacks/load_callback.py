@@ -1,7 +1,7 @@
 from . import Input, Output, State, html
 from . import dash_table
 from . import PreventUpdate
-from . import callback_context, get_input_trigger
+from . import callback_context, get_input_trigger, columns_map
 
 from . import Datasets
 from . import FileHandler
@@ -95,17 +95,19 @@ def register_load_callbacks(app):
         input_trigger = get_input_trigger(ctx)
         if dataset_obj.loaded:
             if input_trigger == "view_dataset":
+                table_data = dataset_obj.analysis_df.copy()
+                table_data = table_data.rename(columns=columns_map)
 
                 return dash_table.DataTable(
                     id='dataset_table',
                     columns=[
-                        {'name': i, 'id': i, 'deletable': True} for i in dataset_obj.analysis_df.columns
+                        {'name': i, 'id': i, 'deletable': True} for i in table_data.columns
                         # omit the id column
                         if i != 'id'
                     ],
                     style_header={'text-align': 'center', 'background-color': '#555555',
                                   'color': 'white'},
-                    data=dataset_obj.analysis_df.head(100).to_dict('records'),
+                    data=table_data.head(100).to_dict('records'),
                     editable=True,
                     filter_action="native",
                     sort_action="native",

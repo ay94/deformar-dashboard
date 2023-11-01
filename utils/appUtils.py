@@ -26,14 +26,42 @@ Datasets = {
 
 }
 
-all_columns = [
-    'global_id', 'token_id', 'word_id', 'sen_id', 'token_ids', 'token_ids', 'label_ids',
-    'first_tokens_freq', 'first_tokens_consistency', 'first_tokens_inconsistency',
-    'words', 'wordpieces', 'tokens', 'first_tokens', 'truth', 'pred', 'agreement',
-    'losses', 'x', 'y', 'tokenization_rate', 'token_entropy', 'word_entropy', 'tr_entity',
-    'pr_entity', 'error_type', 'prediction_entropy', 'confidences', 'variability',
-    'O', 'B-PERS', 'I-PERS', 'B-ORG', 'I-ORG', 'B-LOC', 'I-LOC', 'B-MISC', 'I-MISC',
-    '3_clusters', '4_clusters', '9_clusters', 'truth_token_score', 'pred_token_score', 'pre_x', 'pre_y'
+columns_map = {
+    'global_id': 'Global Id', 'token_id': 'Token Id', 'word_id': 'Word Id',
+    'sen_id': 'Sentence Id', 'token_ids': 'Token Selector', 'label_ids': 'Label Id',
+    'first_tokens_freq': 'Anchor Token Frequency', 'first_tokens_consistency': 'Anchor Token Consistency',
+    'first_tokens_inconsistency': 'Anchor Token Inconsistency', 'words': 'Words', 'wordpieces': 'Word Pieces',
+    'tokens': 'Tokens', 'first_tokens': 'Anchor Token', 'truth': 'Ground Truth', 'pred': 'Prediction',
+    'agreement': 'Class Agreement', 'losses': 'Loss', 'tokenization_rate': 'Tokenization Rate',
+    'token_entropy': 'Token Entropy', 'word_entropy': 'Word Entropy', 'tr_entity': 'Entity Truth',
+    'pr_entity': 'Entity Prediction', 'error_type': 'Error Type', 'prediction_entropy': 'Prediction Entropy',
+    'x': 'X Coordinate', 'y': 'Y Coordinate', 'pre_x': 'Pretrained X Coordinate', 'pre_y': 'Pretrained Y Coordinate',
+    'confidences': 'Confidence', 'variability': 'Variability', 'O': 'O Confidence', 'B-PERS': 'B-PERS Confidence',
+    'I-PERS': 'I-PERS Confidence', 'B-ORG': 'B-ORG Confidence', 'I-ORG': 'I-ORG Confidence',
+    'B-LOC': 'B-LOC Confidence',
+    'I-LOC': 'I-LOC Confidence', 'B-MISC': 'B-MISC Confidence', 'I-MISC': 'I-MISC Confidence', '3_clusters': 'K=3',
+    'truth_token_score': 'Truth Silhouette Score', 'pred_token_score': 'Prediction Silhouette Score',
+    '4_clusters': 'K=4', '9_clusters': 'K=9', 'centroid': 'Centroid', 'clusters': 'Clusters',
+    'entity': 'Entity', 'true_token': 'Truth Token', 'pred_token': 'Prediction Token',
+
+}
+
+columns_order = [
+    'Global Id', 'Token Id', 'Sentence Id', 'Token Selector', 'Word Id',
+    'Label Id', 'Words', 'Tokens', 'Word Pieces', 'Anchor Token', 'Ground Truth',
+    'Prediction', 'Class Agreement', 'Error Type', 'Entity Truth', 'Entity Prediction',
+    'Anchor Token Frequency', 'Anchor Token Consistency', 'Anchor Token Inconsistency', 'Tokenization Rate',
+    'Word Entropy', 'Token Entropy',
+    'X Coordinate', 'Y Coordinate', 'Pretrained X Coordinate', 'Pretrained Y Coordinate',
+    'Confidence', 'Loss', 'Prediction Entropy', 'Variability',
+    'O Confidence', 'B-PERS Confidence', 'I-PERS Confidence', 'B-ORG Confidence',
+    'I-ORG Confidence', 'B-LOC Confidence', 'I-LOC Confidence', 'B-MISC Confidence', 'I-MISC Confidence',
+    'Truth Silhouette Score', 'Prediction Silhouette Score',
+    'K=3', 'K=4', 'K=9'
+]
+
+train_columns = [
+    'Token Selector', 'Words', 'Class Agreement', 'Ground Truth', 'Prediction',
 ]
 
 
@@ -80,7 +108,7 @@ class DatasetConfig:
             self.file_handler.cr_fn(f'{self.dataset_name}/{self.split}/{self.split}_token_score_df.jsonl.gz'),
             lines=True
         )
-        self.analysis_df = self.clean_analysis_df(analysis_df, token_score, pre_df)
+        self.analysis_df, self.light_df = self.clean_analysis_df(analysis_df, token_score, pre_df)
 
         if self.split != 'train':
             self.light_train_df = pd.read_json(
@@ -88,23 +116,22 @@ class DatasetConfig:
                 lines=True
             )
         else:
-            self.light_train_df = self.analysis_df.copy()[
-                ["token_ids", "words", "agreement", "truth", "pred", "x", "y"]]
+            self.light_train_df = self.analysis_df.copy()[train_columns]
 
-        self.centroid_df = pd.read_json(
+        self.centroid_df = self.rename_data(pd.read_json(
             self.file_handler.cr_fn(f'{self.dataset_name}/{self.split}/{self.split}_centroid_df.jsonl.gz'),
             lines=True
-        )
+        ))
 
-        self.confusion_data = pd.read_json(
+        self.confusion_data = self.rename_data(pd.read_json(
             self.file_handler.cr_fn(f'{self.dataset_name}/{self.split}/{self.split}_confusion_data.jsonl.gz'),
             lines=True
-        )
+        ))
 
-        self.entity_prediction = pd.read_json(
+        self.entity_prediction = self.rename_data(pd.read_json(
             self.file_handler.cr_fn(f'{self.dataset_name}/{self.split}/{self.split}_entity_prediction.jsonl.gz'),
             lines=True
-        )
+        ))
 
         self.seq_report = pd.read_csv(
             self.file_handler.cr_fn(f'{self.dataset_name}/{self.split}/{self.split}_seq_report.csv')
@@ -112,8 +139,6 @@ class DatasetConfig:
         self.skl_report = pd.read_csv(
             self.file_handler.cr_fn(f'{self.dataset_name}/{self.split}/{self.split}_skl_report.csv')
         )
-
-        self.light_df = self.create_view_df()
 
         self.weights, self.activations = self.read_plotly()
 
@@ -129,15 +154,21 @@ class DatasetConfig:
             ['truth_token_score', 'pred_token_score']]
         analysis_df.reset_index(inplace=True)
         merged_df = analysis_df.merge(pre_df, on='global_id')
-        return merged_df
+        light_df = self.create_view_df(merged_df)
+        merged_df = merged_df.rename(columns=columns_map)[columns_order]
+        light_df = light_df.rename(columns=columns_map)
+        return merged_df, light_df
 
-    def create_view_df(self):
-        selected_columns = ['global_id', 'sen_id', 'token_ids', 'first_tokens', 'words', 'agreement', 'truth', 'pred',
-                            "error_type", 'x', 'y', 'confidences', 'variability', 'prediction_entropy', 'token_entropy']
-        light_df = self.analysis_df[selected_columns].copy()
+    def create_view_df(self, data):
+        light_columns = ['global_id', 'sen_id', 'token_ids', 'first_tokens', 'words', 'agreement', 'truth', 'pred',
+                         "error_type", 'x', 'y', 'confidences', 'variability', 'prediction_entropy', 'token_entropy']
+        light_df = data[light_columns].copy()
         light_df['id'] = light_df['global_id']
         light_df.set_index('id', inplace=True, drop=False)
         return light_df
+
+    def rename_data(self, data):
+        return data.rename(columns=columns_map)
 
     def read_plotly(self):
         # Read the JSON string from the file using pandas

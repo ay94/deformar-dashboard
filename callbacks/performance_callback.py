@@ -6,6 +6,7 @@ from . import callback_context, get_input_trigger, default_color, \
     create_token_confusion, get_value, default_entity, create_error_bars, \
     extract_column, min_max
 from . import px, pd, np, go, torch, cosine_similarity, tqdm, dash
+from . import hover_data
 
 
 def register_error_callbacks(app, dataset_obj):
@@ -64,16 +65,19 @@ def register_error_callbacks(app, dataset_obj):
 
                 data = dataset_obj.analysis_df.copy()
                 filter_col = extract_column(filter_column)
-
-                if len(filter_value.split()) > 1:
-                    filter_values = filter_value.split()
-                else:
-                    filter_values = [filter_value]
                 try:
+                    if len(filter_value.split()) > 1:
+                        filter_values = filter_value.split()
+                    else:
+                        filter_values = [filter_value]
+
                     output_data = data[data[filter_col].isin(filter_values)].to_dict('records')
                 except:
                     raise PreventUpdate
-            return [output_data, dash.no_update, filter_column, filter_value]
+            try:
+                return [output_data, dash.no_update, filter_column, filter_value]
+            except:
+                raise PreventUpdate
 
     @app.callback(
         [
@@ -89,11 +93,11 @@ def register_error_callbacks(app, dataset_obj):
     def add_error_columns(n_clicks):
         if n_clicks > 0 and dataset_obj.loaded:
             return [
+                dataset_obj.analysis_df.columns[10:],
+                dataset_obj.analysis_df.columns[10:],
+                dataset_obj.analysis_df.columns[10:],
+                dataset_obj.analysis_df.columns[10:],
                 dataset_obj.analysis_df.columns[6:],
-                dataset_obj.analysis_df.columns[6:],
-                dataset_obj.analysis_df.columns[6:],
-                dataset_obj.analysis_df.columns[6:],
-                dataset_obj.analysis_df.columns,
             ]
         else:
             return [
@@ -210,11 +214,13 @@ def register_error_callbacks(app, dataset_obj):
             State("filter_column", "value"),
             State("filter_value", "value"),
             State("draw_text", "value"),
+            State('performance_scatter_mode', 'value'),
         ]
 
     )
     def update_error_scatter(generate_errors, filter_table, reset_table, row_ids,
-                             error_context_color, error_color, error_x, error_y, filter_column, filter_value, checked):
+                             error_context_color, error_color, error_x, error_y,
+                             filter_column, filter_value, checked, scatter_mode):
         if generate_errors == 0:
             raise PreventUpdate
         elif generate_errors > 0:
@@ -241,9 +247,9 @@ def register_error_callbacks(app, dataset_obj):
                     except:
                         raise PreventUpdate
             if len(output_data) == len(dff):
-                dff = dff[dff['agreement'] == False]
+                dff = dff[dff['Class Agreement'] == False]
 
-            output_data.loc[dff['global_id'], context_color] = 'Selected'
+            output_data.loc[dff['Global Id'], context_color] = 'Selected'
 
             ctx = callback_context
             input_trigger = get_input_trigger(ctx)
@@ -255,8 +261,9 @@ def register_error_callbacks(app, dataset_obj):
                 symbol=context_symbol,
                 color_discrete_map=color_map,
                 template='ggplot2',
-                hover_data=['token_ids', 'agreement', 'confidences', 'variability', 'truth', 'pred'])
-            error_context_fig.update_layout(scattermode="group")
+                hover_data=hover_data)
+            if 'group' in scatter_mode:
+                error_context_fig.update_layout(scattermode="group")
 
             error_fig = px.scatter(
                 dff, x=x, y=y,
@@ -264,8 +271,9 @@ def register_error_callbacks(app, dataset_obj):
                 symbol=symbol,
                 color_discrete_map=color_map,
                 template='ggplot2',
-                hover_data=['token_ids', 'agreement', 'confidences', 'variability', 'truth', 'pred'])
-            error_fig.update_layout(scattermode="group")
+                hover_data=hover_data)
+            if 'group' in scatter_mode:
+                error_fig.update_layout(scattermode="group")
             x_range, y_range = min_max(dff, 0.5)
 
             error_fig.update_xaxes(
@@ -278,8 +286,8 @@ def register_error_callbacks(app, dataset_obj):
 
             if 'draw_text' in checked:
                 for i in range(subset.shape[0]):
-                    error_fig.add_annotation(x=subset.iloc[i]['x'], y=subset.iloc[i]['y'],
-                                             text=subset.iloc[i]['first_tokens'],
+                    error_fig.add_annotation(x=subset.iloc[i]['X Coordinate'], y=subset.iloc[i]['Y Coordinate'],
+                                             text=subset.iloc[i]['Anchor Token'],
                                              showarrow=True,
                                              font=dict(size=15, color='black'))
 
@@ -304,14 +312,15 @@ def register_error_callbacks(app, dataset_obj):
             return [], [], [], 0
         else:
             x, y = default_coordinates(x, y)
-            selected_point = pd.DataFrame(selected_errors["points"])[[x, y]]
+            selected_point = pd.DataFrame(selected_errors["points"])[['x', 'y']]
+            selected_point = selected_point.rename(columns={'x': 'X Coordinate', 'y': 'Y Coordinate'})
 
             selected_rows = dataset_obj.analysis_df.merge(
                 selected_point,
                 on=[x, y],
             )
-        return [selected_rows['token_ids'].values, selected_rows['first_tokens'].values,
-                selected_rows[['sen_id', 'token_ids']].to_json(orient="split"), 0]
+        return [selected_rows['Token Selector'].values, selected_rows['Anchor Token'].values,
+                selected_rows[['Sentence Id', 'Token Selector']].to_json(orient="split"), 0]
 
     @app.callback(
         Output("error_token_ambiguity", "figure"),
@@ -397,30 +406,31 @@ def register_error_callbacks(app, dataset_obj):
             if input_trigger == 'filter_error_table':
                 data = dataset_obj.analysis_df.copy()
                 filter_col = extract_column(filter_columns)
-                if len(filter_value.split()) > 1:
-                    filter_values = filter_value.split()
-                else:
-                    filter_values = [filter_value]
                 try:
+                    if len(filter_value.split()) > 1:
+                        filter_values = filter_value.split()
+                    else:
+                        filter_values = [filter_value]
+
                     output_data = data[data[filter_col].isin(filter_values)]
-                    example_ids = list(output_data['sen_id'].unique())
+                    example_ids = list(output_data['Sentence Id'].unique())
                 except:
                     raise PreventUpdate
 
             elif saved_points is not None and len(saved_points) != 0:
                 selected = pd.read_json(saved_points, orient="split")
-                example_ids = list(selected['sen_id'].unique())
+                example_ids = list(selected['Sentence Id'].unique())
             elif row_ids is not None and len(row_ids) > 0:
                 if None not in row_ids:
                     dff = dataset_obj.analysis_df.loc[row_ids].copy()
-                    example_ids = list(dff['sen_id'].unique())
+                    example_ids = list(dff['Sentence Id'].unique())
                 else:
                     dff = dataset_obj.analysis_df.copy()
-                    example_ids = list(dff['sen_id'].unique())
+                    example_ids = list(dff['Sentence Id'].unique())
 
             else:
                 dff = dataset_obj.analysis_df.copy()
-                example_ids = list(dff['sen_id'].unique())
+                example_ids = list(dff['Sentence Id'].unique())
         else:
             return [[], []]
 

@@ -25,6 +25,13 @@ def get_layout():
                         'cursor': 'pointer',
                         'border-radius': '4px'
                     }),
+                    dcc.Checklist(
+                        id='performance_scatter_mode',
+                        options=[
+                            {'label': 'ScatterMode', 'value': 'group'}
+                        ],
+                        value=[]
+                    ),
                 ]),
             html.Div(
                 style={

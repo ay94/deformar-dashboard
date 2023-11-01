@@ -118,10 +118,8 @@ def get_layout():
                     'border-radius': '4px'
                 }),
 
-                html.Div(id='dataset_table_container'),
-
             ]),
-
+        html.Div(id='dataset_table_container'),
 
 
     ])

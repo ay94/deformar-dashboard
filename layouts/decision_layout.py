@@ -28,6 +28,13 @@ def get_layout():
                             'cursor': 'pointer',
                             'border-radius': '4px'
                         }),
+                        dcc.Checklist(
+                            id='scatter_mode',
+                            options=[
+                                {'label': 'ScatterMode', 'value': 'group'}
+                            ],
+                            value=[]
+                        ),
                 ]),
                 dash_table.DataTable(
                     id='selector_datatable',
@@ -233,7 +240,7 @@ def get_layout():
                 'display': 'flex',
                 'justify-content': 'center',
                 'align-items': 'center',
-                'height': '50vh'
+                'height': '100vh'
             },
             children=[
                 html.Button('Show Impact', id='show_impact', n_clicks=0, style={
@@ -252,7 +259,7 @@ def get_layout():
                 dcc.Dropdown(
                     id='impact_view',
                     options=[
-                        {'label': 'Activations', 'value': 'activations'},
+                        {'label': 'Attention Scores', 'value': 'attention_score'},
                         {'label': 'Weights', 'value': 'weights'},
                     ],
                     placeholder="Select View...",

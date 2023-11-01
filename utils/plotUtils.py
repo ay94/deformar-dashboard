@@ -21,11 +21,11 @@ def get_input_trigger(ctx):
 
 def default_coordinates(x, y):
     if x is None or len(x) < 1:
-        x_column = 'x'
+        x_column = 'X Coordinate'
     else:
         x_column = x[0]
     if y is None or len(y) < 1:
-        y_column = 'y'
+        y_column = 'Y Coordinate'
     else:
         y_column = y[0]
     return x_column, y_column
@@ -33,12 +33,12 @@ def default_coordinates(x, y):
 
 def default_color(colors):
     if colors is None or len(colors) < 1:
-        color = 'truth'
-        symbol = 'agreement'
+        color = 'Ground Truth'
+        symbol = 'Class Agreement'
     else:
         if len(colors) > 0:
             color = colors[0]
-            symbol = 'agreement'
+            symbol = 'Class Agreement'
         if len(colors) > 1:
             color = colors[0]
             symbol = colors[1]
@@ -69,13 +69,13 @@ def get_value(df, column_name, value):
 
 
 def create_confusion_table(errors):
-    confusion = errors.pivot_table(index='truth', columns='pred', aggfunc='size', fill_value=0)
+    confusion = errors.pivot_table(index='Ground Truth', columns='Prediction', aggfunc='size', fill_value=0)
     return confusion
 
 
 def compute_confusion(data):
-    true_labels = data['truth']
-    predicted_labels = data['pred']
+    true_labels = data['Ground Truth']
+    predicted_labels = data['Prediction']
     # Create a confusion matrix
     labels = list(set(true_labels))
     cm = confusion_matrix(true_labels, predicted_labels, labels=labels)
@@ -85,23 +85,23 @@ def compute_confusion(data):
 
 
 def create_token_confusion(df):
-    token_data = df[~df['truth'].isin(['[CLS]', '[SEP]', 'IGNORED'])]
-    return token_data[False == token_data['agreement']]
+    token_data = df[~df['Ground Truth'].isin(['[CLS]', '[SEP]', 'IGNORED'])]
+    return token_data[False == token_data['Class Agreement']]
 
 
 def create_error_bars(df, entity_prediction, chosen_entity):
-    errors = get_value(df, 'agreement', False)
-    entity_errors = get_value(entity_prediction, 'agreement', False)
+    errors = get_value(df, 'Class Agreement', False)
+    entity_errors = get_value(entity_prediction, 'Class Agreement', False)
     confusion_table = create_confusion_table(errors)
-    entity_errors = entity_errors.rename(columns={'true_token': 'truth', 'pred_token': 'pred'})
+    entity_errors = entity_errors.rename(columns={'Truth Token': 'Ground Truth', 'Prediction Token': 'Prediction'})
     entity_confusion_table = create_confusion_table(
-        entity_errors[entity_errors['entity'] == chosen_entity])
+        entity_errors[entity_errors['Entity'] == chosen_entity])
     return confusion_table, entity_confusion_table
 
 
 def extract_column(column):
     if column is None or len(column) < 1:
-        output = 'first_tokens'
+        output = 'Anchor Token'
     else:
         output = column
     return output
@@ -154,9 +154,9 @@ def color_tokens(example_words, example_labels, label_map, tokens, labels, preds
 
 def min_max(df, ratio):
     x_range = (
-        df.x.min() - abs(df.x.min() * ratio), df.x.max() + abs(df.x.max() * ratio))
+        df['X Coordinate'].min() - abs(df['X Coordinate'].min() * ratio), df['X Coordinate'].max() + abs(df['X Coordinate'].max() * ratio))
     y_range = (
-        df.y.min() - abs(df.y.min() * ratio), df.y.max() + abs(df.y.max() * ratio))
+        df['Y Coordinate'].min() - abs(df['Y Coordinate'].min() * ratio), df['Y Coordinate'].max() + abs(df['Y Coordinate'].max() * ratio))
     return x_range, y_range
 
 

@@ -8,6 +8,8 @@ from . import px, go, head_view, model_view, torch, cosine_similarity, \
     tqdm, np, pd
 from . import AttentionSimilarity, Datasets
 
+from . import hover_data, train_hover_data
+
 
 def register_instance_callbacks(app, dataset_obj):
     @app.callback(
@@ -43,30 +45,31 @@ def register_instance_callbacks(app, dataset_obj):
         [
             Input("visualize_instance", "n_clicks"),
             State("error_instances", "value"),
+            State('performance_scatter_mode', 'value'),
         ]
     )
-    def visualize_instance(n_clicks, example_id):
+    def visualize_instance(n_clicks, example_id, scatter_mode):
         if n_clicks == 0:
             raise PreventUpdate
         elif n_clicks > 0:
             try:
-                instance_df = dataset_obj.analysis_df[dataset_obj.analysis_df['sen_id'] == str(example_id)].copy()
+                instance_df = dataset_obj.analysis_df[dataset_obj.analysis_df['Sentence Id'] == str(example_id)].copy()
                 example_words = dataset_obj.corpus[dataset_obj.split][int(example_id)][1]
                 example_labels = dataset_obj.corpus[dataset_obj.split][int(example_id)][2]
                 label_map = dataset_obj.corpus['labels']
             except:
-                instance_df = dataset_obj.analysis_df[dataset_obj.analysis_df['sen_id'] == '0'].copy()
+                instance_df = dataset_obj.analysis_df[dataset_obj.analysis_df['Sentence Id'] == '0'].copy()
                 example_words = dataset_obj.corpus[dataset_obj.split][0][1]
                 example_labels = dataset_obj.corpus[dataset_obj.split][0][2]
                 label_map = dataset_obj.corpus['labels']
 
-            tokens = list(instance_df['first_tokens'])
-            option_df = instance_df[['token_ids', 'words']]
+            tokens = list(instance_df['Anchor Token'])
+            option_df = instance_df[['Token Selector', 'Words']]
             token_ids = []
             for _, row in option_df.iterrows():
-                token_ids.append({'label': row['token_ids'], 'value': row['words']})
-            labels = list(instance_df['truth'])
-            preds = list(instance_df['pred'])
+                token_ids.append({'label': row['Token Selector'], 'value': row['Words']})
+            labels = list(instance_df['Ground Truth'])
+            preds = list(instance_df['Prediction'])
             mistakes = identify_mistakes(tokens, labels, preds)
 
             label_color_map, colored_words, colored_truth_text, colored_pred_text = color_tokens(example_words,
@@ -75,13 +78,15 @@ def register_instance_callbacks(app, dataset_obj):
                                                                                                  labels, preds)
 
             instance_fig = px.scatter(
-                instance_df, x="x", y="y",
-                color='truth',
-                symbol='agreement',
+                instance_df, x="X Coordinate", y="Y Coordinate",
+                color='Ground Truth',
+                symbol='Class Agreement',
                 color_discrete_map=color_map,
                 template='ggplot2',
-                hover_data=['token_ids', 'agreement', 'confidences', 'variability', 'truth', 'pred'])
-            instance_fig.update_layout(scattermode="group")
+                hover_data=hover_data)
+            if 'group' in scatter_mode:
+                instance_fig.update_layout(scattermode="group")
+
             x_range, y_range = min_max(instance_df, 0.5)
             instance_fig.update_xaxes(
                 range=x_range
@@ -182,7 +187,6 @@ def register_instance_callbacks(app, dataset_obj):
         else:
             raise PreventUpdate
 
-
     @app.callback(
         [
             Output('choose_example', 'options'),
@@ -196,16 +200,17 @@ def register_instance_callbacks(app, dataset_obj):
             State("instance_tokens", "options"),
             State("instance_tokens", "value"),
             State("example_split", "value"),
+            State('performance_scatter_mode', 'value'),
         ]
     )
-    def load_token_data(n_clicks, tokens, value, split):
+    def load_token_data(n_clicks, tokens, value, split, scatter_mode):
         if n_clicks == 0:
             raise PreventUpdate
         elif n_clicks > 0:
             if split == 'train':
                 data = dataset_obj.light_train_df.copy()
-                data['first_tokens'] = data['token_ids'].apply(lambda x: x.split('@#')[0])
-                data['sen_id'] = data['token_ids'].apply(lambda x: x.split('@#')[1])
+                data['Anchor Token'] = data['Token Selector'].apply(lambda x: x.split('@#')[0])
+                data['Sentence Id'] = data['Token Selector'].apply(lambda x: x.split('@#')[1])
             else:
                 data = dataset_obj.analysis_df.copy()
             try:
@@ -213,20 +218,21 @@ def register_instance_callbacks(app, dataset_obj):
                 token = selected_label.split('@#')[0]
             except:
                 raise PreventUpdate
-            sen_ids = data[data['first_tokens'].isin([token])]['sen_id']
-            output_data = data[data['sen_id'].isin(sen_ids.values)]
-            token_ids = data[data['first_tokens'].isin([token])]['token_ids']
+            sen_ids = data[data['Anchor Token'].isin([token])]['Sentence Id']
+            output_data = data[data['Sentence Id'].isin(sen_ids.values)]
+            token_ids = data[data['Anchor Token'].isin([token])]['Token Selector']
             if len(sen_ids) >= 1 and len(token_ids) >= 1:
 
                 x_range, y_range = min_max(output_data, 0.2)
                 examples_fig = px.scatter(
-                    output_data, x="x", y="y",
-                    color='truth',
-                    symbol='agreement',
+                    output_data, x="X Coordinate", y="Y Coordinate",
+                    color='Ground Truth',
+                    symbol='Class Agreement',
                     color_discrete_map=color_map,
                     template='ggplot2',
-                    hover_data=['token_ids',"words", "agreement", "truth", "pred"])
-                examples_fig.update_layout(scattermode="group")
+                    hover_data=hover_data)
+                if 'group' in scatter_mode:
+                    examples_fig.update_layout(scattermode="group")
                 examples_fig.update_xaxes(
                     range=x_range
                 )
@@ -234,7 +240,8 @@ def register_instance_callbacks(app, dataset_obj):
                     range=y_range
                 )
 
-                return sen_ids, token_ids, token_ids, examples_fig, html.Div('Examples Loaded', style={'color': 'green'})
+                return sen_ids, token_ids, token_ids, examples_fig, html.Div('Examples Loaded',
+                                                                             style={'color': 'green'})
             else:
                 return [], [], [], go.Figure(), html.Div('No Data Loaded', style={'color': 'red'})
 
@@ -252,9 +259,10 @@ def register_instance_callbacks(app, dataset_obj):
             State("choose_example", "value"),
             State("example_split", "value"),
             State("instance_tokens", "value"),
+            State('performance_scatter_mode', 'value'),
         ]
     )
-    def visualize_example(n_clicks, example_id, split, instance_token):
+    def visualize_example(n_clicks, example_id, split, instance_token, scatter_mode):
         if n_clicks == 0:
             raise PreventUpdate
         elif n_clicks > 0:
@@ -266,17 +274,17 @@ def register_instance_callbacks(app, dataset_obj):
                 data = dataset_obj.analysis_df.copy()
                 examples = dataset_obj.corpus[split]
             try:
-                instance_df = data[data['sen_id'] == example_id].copy()
+                instance_df = data[data['Sentence Id'] == example_id].copy()
                 example_words = examples[int(example_id)][1]
                 example_labels = examples[int(example_id)][2]
             except:
-                instance_df = data[data['sen_id'] == 0].copy()
+                instance_df = data[data['Sentence Id'] == 0].copy()
                 example_words = examples[0][1]
                 example_labels = examples[0][2]
 
-            tokens = list(instance_df['first_tokens'])
-            labels = list(instance_df['truth'])
-            preds = list(instance_df['pred'])
+            tokens = list(instance_df['Anchor Token'])
+            labels = list(instance_df['Ground Truth'])
+            preds = list(instance_df['Prediction'])
             mistakes = identify_mistakes(tokens, labels, preds)
 
             label_color_map, colored_words, colored_truth_text, colored_pred_text = color_tokens(example_words,
@@ -287,13 +295,14 @@ def register_instance_callbacks(app, dataset_obj):
 
             x_range, y_range = min_max(instance_df, 0.2)
             example_fig = px.scatter(
-                instance_df, x="x", y="y",
-                color='truth',
-                symbol='agreement',
+                instance_df, x="X Coordinate", y="Y Coordinate",
+                color='Ground Truth',
+                symbol='Class Agreement',
                 color_discrete_map=color_map,
                 template='ggplot2',
-                hover_data=['token_ids', 'agreement', 'truth', 'pred'])
-            example_fig.update_layout(scattermode="group")
+                hover_data=train_hover_data)
+            if 'group' in scatter_mode:
+                example_fig.update_layout(scattermode="group")
             example_fig.update_xaxes(
                 range=x_range
             )
@@ -312,8 +321,6 @@ def register_instance_callbacks(app, dataset_obj):
             State("example_split", "value"),
         ]
 
-
-
     )
     def compute_example_similarity_matrix(n_clicks, tokens, current_tokens, split):
         if dataset_obj.initialized and tokens is not None:
@@ -331,7 +338,7 @@ def register_instance_callbacks(app, dataset_obj):
                     output_data = dataset_obj.analysis_df.copy()
                     split_data = dataset_obj.instanceLevel.test_dataset
 
-                sen_ids = output_data[output_data['token_ids'].isin(chosen_tokens)][['sen_id', 'token_ids']].values
+                sen_ids = output_data[output_data['Token Selector'].isin(chosen_tokens)][['Sentence Id', 'Token Selector']].values
                 examples = []
                 with torch.no_grad():
                     for sen_id, token in tqdm(sen_ids):
@@ -378,10 +385,12 @@ def register_instance_callbacks(app, dataset_obj):
                 compare = dataset_obj.instanceLevel.test_dataset
                 compare_example = compare.__getitem__(int(locator[1]))
                 compare_inputs = {'input_ids': compare_example['input_ids'][compare_example['input_ids'] != 0][None, :],
-                                  'attention_mask': compare_example['attention_mask'][compare_example['input_ids'] != 0][
+                                  'attention_mask': compare_example['attention_mask'][
+                                                        compare_example['input_ids'] != 0][
                                                     None,
                                                     :],
-                                  'token_type_ids': compare_example['token_type_ids'][compare_example['input_ids'] != 0][
+                                  'token_type_ids': compare_example['token_type_ids'][
+                                                        compare_example['input_ids'] != 0][
                                                     None,
                                                     :]
                                   }
@@ -394,7 +403,7 @@ def register_instance_callbacks(app, dataset_obj):
                     output_data = dataset_obj.analysis_df.copy()
                     split_data = dataset_obj.instanceLevel.test_dataset
 
-                sen_ids = output_data[output_data['token_ids'].isin(chosen_tokens)][['sen_id', 'token_ids']].values
+                sen_ids = output_data[output_data['Token Selector'].isin(chosen_tokens)][['Sentence Id', 'Token Selector']].values
                 examples = []
                 with torch.no_grad():
                     for sen_id, token in tqdm(sen_ids):
@@ -415,5 +424,3 @@ def register_instance_callbacks(app, dataset_obj):
             return example_comparison_bar
         else:
             return go.Figure()
-
-

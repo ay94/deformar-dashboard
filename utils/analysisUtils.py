@@ -268,8 +268,6 @@ class AttentionSimilarity:
         for k, v in inputs.items():
             inputs[k] = v.to(self.device)
 
-        input_ids = inputs['input_ids']
-        token_type_ids = inputs['token_type_ids']
 
         with torch.no_grad():
 

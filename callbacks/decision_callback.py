@@ -5,6 +5,8 @@ from . import callback_context, get_input_trigger, default_color, \
     color_map, default_coordinates, create_confusion_table, defualt_centroid
 from . import px, pd, go
 
+from . import hover_data
+
 
 def register_decision_callbacks(app, dataset_obj):
     @app.callback(
@@ -35,9 +37,10 @@ def register_decision_callbacks(app, dataset_obj):
             Input("initialize_decision_tab", "n_clicks"),
             Input('selector_datatable', 'derived_virtual_row_ids'),
             Input('selector_datatable', 'selected_row_ids'),
+            State('scatter_mode', 'value'),
         ]
     )
-    def update_selector_scatter(n_clicks, row_ids, selected_row_ids):
+    def update_selector_scatter(n_clicks, row_ids, selected_row_ids, scatter_mode):
         if n_clicks > 0 and dataset_obj.loaded:
             selected_id_set = set(selected_row_ids or [])
             output_data = dataset_obj.light_df.copy()
@@ -48,8 +51,8 @@ def register_decision_callbacks(app, dataset_obj):
                 if None not in row_ids:
                     dff = output_data.loc[row_ids]
 
-            filter_mask = output_data['global_id'].isin(dff['global_id'])
-            selection_mask = output_data['global_id'].isin(selected_id_set)
+            filter_mask = output_data['Global Id'].isin(dff['Global Id'])
+            selection_mask = output_data['Global Id'].isin(selected_id_set)
 
             # Use the boolean mask and if-else statement to assign values to the 'colors' column
             output_data.loc[filter_mask, 'colors'] = 'Filtered'
@@ -57,12 +60,13 @@ def register_decision_callbacks(app, dataset_obj):
             output_data.loc[selection_mask, 'colors'] = 'Selected'
 
             fig = px.scatter(
-                output_data, x="x", y="y",
+                output_data, x="X Coordinate", y="Y Coordinate",
                 color="colors",
-                symbol="error_type",
-                hover_data=['token_ids', 'agreement', 'confidences', 'variability', 'truth', 'pred'],
+                symbol="Error Type",
+                hover_data=hover_data,
                 template='ggplot2')
-            fig.update_layout(scattermode="group")
+            if 'group' in scatter_mode:
+                fig.update_layout(scattermode="group")
             return fig
 
         else:
@@ -83,12 +87,12 @@ def register_decision_callbacks(app, dataset_obj):
     def add_columns(n_clicks):
         if n_clicks > 0 and dataset_obj.loaded:
             return [
-                dataset_obj.analysis_df.columns[6:],
-                dataset_obj.analysis_df.columns[6:],
-                dataset_obj.analysis_df.columns[6:],
-                dataset_obj.analysis_df.columns[6:],
+                dataset_obj.analysis_df.columns[10:],
+                dataset_obj.analysis_df.columns[10:],
+                dataset_obj.analysis_df.columns[10:],
+                dataset_obj.analysis_df.columns[10:],
                 dataset_obj.centroid_df.columns[5:],
-                dataset_obj.centroid_df['centroid'].unique()
+                dataset_obj.centroid_df['Centroid'].unique()
             ]
         else:
             return [
@@ -101,11 +105,12 @@ def register_decision_callbacks(app, dataset_obj):
             Input('generate_decision', 'n_clicks'),
             Input("save_measure_points", "children"),
             State('decision_columns', 'value'),
+            State('scatter_mode', 'value'),
         ],
 
         prevent_initial_call=True
     )
-    def create_decision_plot(n_clicks, saved_points, columns):
+    def create_decision_plot(n_clicks, saved_points, columns, scatter_mode):
         if n_clicks == 0:
             raise PreventUpdate
         elif n_clicks > 0:
@@ -115,26 +120,28 @@ def register_decision_callbacks(app, dataset_obj):
             else:
                 data = dataset_obj.analysis_df.copy()
                 selected = pd.read_json(saved_points, orient="split")
-                data.loc[selected['global_id'], color] = 'Selected'
+                data.loc[selected['Global Id'], color] = 'Selected'
             try:
                 decision_plot = px.scatter(
-                    data, x="x", y="y",
+                    data, x="X Coordinate", y="Y Coordinate",
                     color=color,
                     symbol=symbol,
-                    hover_data=['token_ids', 'agreement', 'confidences', 'variability', 'truth', 'pred'],
+                    hover_data=hover_data,
                     color_discrete_sequence=px.colors.qualitative.Light24_r,
                     color_discrete_map=color_map,
                     template='ggplot2')
-                decision_plot.update_layout(scattermode="group")
+                if 'group' in scatter_mode:
+                    decision_plot.update_layout(scattermode="group")
             except:
                 decision_plot = px.scatter(
-                    data, x="x", y="y",
+                    data, x="X Coordinate", y="Y Coordinate",
                     color=color,
-                    hover_data=['token_ids', 'agreement', 'confidences', 'variability', 'truth', 'pred'],
+                    hover_data=hover_data,
                     color_discrete_sequence=px.colors.qualitative.Light24_r,
                     color_discrete_map=color_map,
                     template='ggplot2')
-                decision_plot.update_layout(scattermode="group")
+                if 'group' in scatter_mode:
+                    decision_plot.update_layout(scattermode="group")
 
         return decision_plot
 
@@ -146,10 +153,11 @@ def register_decision_callbacks(app, dataset_obj):
             Input("save_decision_points", "children"),
             State('measure_columns', 'value'),
             State('measure_x', 'value'),
-            State('measure_y', 'value')
+            State('measure_y', 'value'),
+            State('scatter_mode', 'value'),
         ]
     )
-    def create_measure_plot(n_clicks, include_ignored, saved_points, measure_color, x, y):
+    def create_measure_plot(n_clicks, include_ignored, saved_points, measure_color, x, y, scatter_mode):
         if n_clicks == 0:
             raise PreventUpdate
         elif n_clicks > 0:
@@ -160,35 +168,35 @@ def register_decision_callbacks(app, dataset_obj):
                 measure_data = dataset_obj.analysis_df.copy()
             else:
                 measure_data = dataset_obj.analysis_df[
-                    ~dataset_obj.analysis_df['first_tokens'].isin(['IGNORED', '[CLS]', '[SEP]'])].copy()
+                    ~dataset_obj.analysis_df['Anchor Token'].isin(['IGNORED', '[CLS]', '[SEP]'])].copy()
             if saved_points is None:
                 data = measure_data
             else:
                 data = measure_data.copy()
                 selected = pd.read_json(saved_points, orient="split")
-                data.loc[selected['global_id'], color] = 'Selected'
+                data.loc[selected['Global Id'], color] = 'Selected'
 
             try:
                 measure_plot = px.scatter(
                     data, x=x, y=y,
                     color=color,
                     symbol=symbol,
-                    hover_data=['token_ids', 'agreement', 'confidences', 'variability', 'prediction_entropy',
-                                'token_entropy', 'truth', 'pred'],
+                    hover_data=hover_data,
                     color_discrete_sequence=px.colors.qualitative.Light24_r,
                     color_discrete_map=color_map,
                     template='ggplot2')
-                measure_plot.update_layout(scattermode="group")
+                if 'group' in scatter_mode:
+                    measure_plot.update_layout(scattermode="group")
             except:
                 measure_plot = px.scatter(
                     data, x=x, y=y,
                     color=color,
-                    hover_data=['token_ids', 'agreement', 'confidences', 'variability', 'prediction_entropy',
-                                'token_entropy', 'truth', 'pred'],
+                    hover_data=hover_data,
                     color_discrete_sequence=px.colors.qualitative.Light24_r,
                     color_discrete_map=color_map,
                     template='ggplot2')
-                measure_plot.update_layout(scattermode="group")
+                if 'group' in scatter_mode:
+                    measure_plot.update_layout(scattermode="group")
 
         return measure_plot
 
@@ -208,16 +216,17 @@ def register_decision_callbacks(app, dataset_obj):
         if selectedData is None or len(selectedData['points']) == 0:
             raise PreventUpdate
         else:
-            selected_point = pd.DataFrame(selectedData["points"])[["x", "y"]]
+            selected_point = pd.DataFrame(selectedData["points"])[['x', 'y']]
+            selected_point = selected_point.rename(columns={'x': 'X Coordinate', 'y': 'Y Coordinate'})
 
             selected_rows = dataset_obj.analysis_df.merge(
                 selected_point,
-                on=["x", "y"],
+                on=["X Coordinate", "Y Coordinate"],
             )
         if 'checked' in include_ignored:
             measure_data = selected_rows.copy()
         else:
-            measure_data = selected_rows[~selected_rows['first_tokens'].isin(['IGNORED', '[CLS]', '[SEP]'])].copy()
+            measure_data = selected_rows[~selected_rows['Anchor Token'].isin(['IGNORED', '[CLS]', '[SEP]'])].copy()
 
         return measure_data.to_json(orient="split")
 
@@ -239,8 +248,10 @@ def register_decision_callbacks(app, dataset_obj):
         if selectedData is None or len(selectedData['points']) == 0:
             raise PreventUpdate
         else:
-            selected_point = pd.DataFrame(selectedData["points"])[["x", "y"]]
-            selected_point = selected_point.rename(columns={'x': x, 'y': y})
+            selected_point = pd.DataFrame(selectedData["points"])[['x', 'y']]
+            selected_point = selected_point.rename(columns={'x': 'X Coordinate', 'y': 'Y Coordinate'})
+            # selected_point = pd.DataFrame(selectedData["points"])[["X Coordinate", "Y Coordinate"]]
+            # selected_point = selected_point.rename(columns={'X Coordinate': x, 'Y Coordinate': y})
 
             selected_rows = dataset_obj.analysis_df.merge(
                 selected_point,
@@ -254,35 +265,38 @@ def register_decision_callbacks(app, dataset_obj):
             Input("generate_centroid", "n_clicks"),
             State("centroid_columns", "value"),
             State("centroid_cluster", "value"),
+            State('scatter_mode', 'value'),
         ]
     )
-    def create_centroid_plot(n_clicks, centroid_color, centroid_cluster):
+    def create_centroid_plot(n_clicks, centroid_color, centroid_cluster, scatter_mode):
         if n_clicks == 0:
             raise PreventUpdate
         elif n_clicks > 0:
             color, symbol = default_color(centroid_color)
             centroid_cluster = defualt_centroid(centroid_cluster)
-            data = dataset_obj.centroid_df[dataset_obj.centroid_df['centroid'] == centroid_cluster]
+            data = dataset_obj.centroid_df[dataset_obj.centroid_df['Centroid'] == centroid_cluster]
 
             try:
                 centroid_scatter = px.scatter(
-                    data, x='x', y='y',
+                    data, x="X Coordinate", y="Y Coordinate",
                     color=color,
                     symbol=symbol,
                     hover_data=data.columns,
                     color_discrete_sequence=px.colors.qualitative.Light24_r,
                     color_discrete_map=color_map,
                     template='ggplot2')
-                centroid_scatter.update_layout(scattermode="group")
+                if 'group' in scatter_mode:
+                    centroid_scatter.update_layout(scattermode="group")
             except:
                 fig = px.scatter(
-                    data, x='x', y='y',
+                    data, x="X Coordinate", y="Y Coordinate",
                     color=color,
                     hover_data=data.columns,
                     color_discrete_sequence=px.colors.qualitative.Light24_r,
                     color_discrete_map=color_map,
                     template='ggplot2')
-                centroid_scatter.update_layout(scattermode="group")
+                if 'group' in scatter_mode:
+                    centroid_scatter.update_layout(scattermode="group")
         return centroid_scatter
 
     @app.callback(
@@ -326,12 +340,12 @@ def register_decision_callbacks(app, dataset_obj):
             page_current=0,
             page_size=10,
         ),
-        points.groupby(['truth', 'pred'])['global_id'].count().reset_index()
+        points.groupby(['Ground Truth', 'Prediction'])['Global Id'].count().reset_index()
         confusion_table = create_confusion_table(points)
         selection_tag_proportion = px.bar(confusion_table, orientation='h')
         selection_tag_proportion.update_layout(
-            xaxis_title='Pred',
-            yaxis_title='Truth'
+            xaxis_title='Prediction',
+            yaxis_title='Ground Truth'
         )
 
         return [selection_tag_proportion, selection_datatable]
@@ -352,7 +366,7 @@ def register_decision_callbacks(app, dataset_obj):
         else:
             return go.Figure()
 
-        return dataset_obj.token_ambiguity.visualize_ambiguity(list(points['first_tokens'].unique()))
+        return dataset_obj.token_ambiguity.visualize_ambiguity(list(points['Anchor Token'].unique()))
 
     @app.callback(
         Output("impact_plot", "figure"),
@@ -366,7 +380,7 @@ def register_decision_callbacks(app, dataset_obj):
         if n_clicks == 0:
             raise PreventUpdate
         elif n_clicks > 0 and dataset_obj.loaded:
-            if view == 'activations':
+            if view == 'attention_score':
                 impact_plot = dataset_obj.activations.update_layout(
                     title="Training Impact View"
                 )
