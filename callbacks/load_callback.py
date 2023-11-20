@@ -13,6 +13,24 @@ def register_load_callbacks(app):
     fh = FileHandler(analysis_folder)
     dataset_obj = DatasetConfig()
 
+    # @app.callback(
+    #
+    #     Output('download-link', 'href'),
+    #     [
+    #         Input('download', 'n_clicks'),
+    #     ]
+    # )
+    # def download(n_clicks):
+    #     if n_clicks > 0:
+    #         fig = app.layout['test'].figure
+    #         import os
+    #         filename = f'/Users/ay227/Desktop/test.pdf'
+    #         os.makedirs(os.path.dirname(filename), exist_ok=True)
+    #         fig.write_image(filename)
+    #         return filename
+    #     else:
+    #         raise PreventUpdate
+
     @app.callback(
         [
             Output('dataset_prompt', 'children'),
@@ -126,7 +144,4 @@ def register_load_callbacks(app):
             raise PreventUpdate
 
     return dataset_obj
-    # if dataset_obj.loaded:
-    #     return dataset_obj
-    # else:
-    #     return None
+

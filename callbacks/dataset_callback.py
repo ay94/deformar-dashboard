@@ -7,6 +7,7 @@ from . import Datasets
 from . import FileHandler
 from . import DatasetConfig
 
+
 # columns_map = {
 #     'global_id': 'Global Id', 'token_id': 'Token Id', 'word_id': 'Word Id',
 #     'sen_id': 'Sentence Id', 'token_ids': 'Token Selector', 'label_ids': 'Label Id',
@@ -61,13 +62,14 @@ def register_dataset_callbacks(app, dataset_obj):
     @app.callback(
 
         [
+            Output('initialize_dataset_tab', 'children'),
             Output('statistical_columns', 'options'),
             Output('distribution_column', 'options'),
             Output('categorical_column', 'options'),
             Output('correlation_columns', 'options'),
             Output('custom_distribution_selection', 'options'),
             Output('error_rate_columns', 'options'),
-            Output('initialize_dataset', 'children'),
+
         ],
 
         Input("initialize_characteristics_tab", "n_clicks"),
@@ -92,9 +94,10 @@ def register_dataset_callbacks(app, dataset_obj):
             ]
 
             initialization_div = html.Div('Tab Initialized', style={'color': 'green'})
-            return summary_columns, distribution_columns, categorical_columns, \
+
+            return initialization_div, summary_columns, distribution_columns, categorical_columns, \
                    correlation_columns, custom_distributions, error_rate_columns, \
-                   initialization_div
+
 
         else:
             raise PreventUpdate

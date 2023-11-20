@@ -11,22 +11,25 @@ from . import hover_data
 def register_decision_callbacks(app, dataset_obj):
     @app.callback(
         [
+            Output('initialize_decision', 'children'),
             Output("selector_datatable", "columns"),
-            Output("selector_datatable", "data")
+            Output("selector_datatable", "data"),
+
         ],
         Input("initialize_decision_tab", "n_clicks"),
 
         prevent_initial_call=True
     )
-    def populate_decision_selector_table(n_clicks):
+    def initialize_decision_tab(n_clicks):
         if n_clicks > 0 and dataset_obj.loaded:
+            initialization_div = html.Div('Tab Initialized', style={'color': 'green'})
             columns = [
                 {'name': i, 'id': i, 'deletable': True} for i in dataset_obj.light_df.columns
                 # omit the id column
                 if i != 'id'
             ]
             data = dataset_obj.light_df.to_dict('records')
-            return [columns, data]
+            return initialization_div, columns, data
 
         else:
             raise PreventUpdate
@@ -34,7 +37,7 @@ def register_decision_callbacks(app, dataset_obj):
     @app.callback(
         Output("selector_scatter", "figure"),
         [
-            Input("initialize_decision_tab", "n_clicks"),
+            Input("generate_selector_plot", "n_clicks"),
             Input('selector_datatable', 'derived_virtual_row_ids'),
             Input('selector_datatable', 'selected_row_ids'),
             State('scatter_mode', 'value'),
@@ -55,13 +58,13 @@ def register_decision_callbacks(app, dataset_obj):
             selection_mask = output_data['Global Id'].isin(selected_id_set)
 
             # Use the boolean mask and if-else statement to assign values to the 'colors' column
-            output_data.loc[filter_mask, 'colors'] = 'Filtered'
-            output_data.loc[~filter_mask, 'colors'] = 'Not Filtered'
-            output_data.loc[selection_mask, 'colors'] = 'Selected'
+            output_data.loc[filter_mask, 'Category'] = 'Filtered'
+            output_data.loc[~filter_mask, 'Category'] = 'Not Filtered'
+            output_data.loc[selection_mask, 'Category'] = 'Selected'
 
             fig = px.scatter(
                 output_data, x="X Coordinate", y="Y Coordinate",
-                color="colors",
+                color="Category",
                 symbol="Error Type",
                 hover_data=hover_data,
                 template='ggplot2')

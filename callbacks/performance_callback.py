@@ -11,18 +11,30 @@ from . import hover_data
 
 def register_error_callbacks(app, dataset_obj):
     @app.callback(
-        Output('error_similarity_status', 'children'),
-        Input("Tabs", "value"),
+        [
+            Output('initialize_performance_tab', 'children'),
+            Output('error_similarity_status', 'children'),
+
+        ],
+
+        [
+            Input("Tabs", "value"),
+            Input("initialize_error_tab", "n_clicks"),
+        ]
+
 
     )
-    def initialize_tab(tab):
+    def initialize_tab(tab, n_clicks):
+        if n_clicks > 0 and dataset_obj.loaded:
+            initialization_div = html.Div('Tab Initialized', style={'color': 'green'})
+        else:
+            initialization_div = None
         if tab == 'performance':
             if dataset_obj.initialized:
                 div = html.Div('Model Initialized', style={'color': 'green'})
             else:
-                div = html.Div('Please Initialize the Model', style={'color': 'red'})
-
-            return div
+                div = html.Div('Please Initialize the Model', style={'color':  'red'})
+            return initialization_div, div
         else:
             raise PreventUpdate
 

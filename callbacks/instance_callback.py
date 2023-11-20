@@ -14,11 +14,14 @@ from . import hover_data, train_hover_data
 def register_instance_callbacks(app, dataset_obj):
     @app.callback(
         [
+            Output('initialize_instance_tab', 'children'),
             Output('initialize_instance', 'children'),
             Output('compare_status', 'children'),
             Output('similarity_status', 'children'),
         ],
-        Input("Tabs", "value"),
+        [
+            Input("Tabs", "value"),
+        ]
 
     )
     def initialize_tab(tab):
@@ -27,8 +30,7 @@ def register_instance_callbacks(app, dataset_obj):
                 div = html.Div('Model Initialized', style={'color': 'green'})
             else:
                 div = html.Div('Please Initialize the Model', style={'color': 'red'})
-
-            return div, div, div
+            return div, div, div, div
         else:
             raise PreventUpdate
 
@@ -338,7 +340,8 @@ def register_instance_callbacks(app, dataset_obj):
                     output_data = dataset_obj.analysis_df.copy()
                     split_data = dataset_obj.instanceLevel.test_dataset
 
-                sen_ids = output_data[output_data['Token Selector'].isin(chosen_tokens)][['Sentence Id', 'Token Selector']].values
+                sen_ids = output_data[output_data['Token Selector'].isin(chosen_tokens)][
+                    ['Sentence Id', 'Token Selector']].values
                 examples = []
                 with torch.no_grad():
                     for sen_id, token in tqdm(sen_ids):
@@ -403,7 +406,8 @@ def register_instance_callbacks(app, dataset_obj):
                     output_data = dataset_obj.analysis_df.copy()
                     split_data = dataset_obj.instanceLevel.test_dataset
 
-                sen_ids = output_data[output_data['Token Selector'].isin(chosen_tokens)][['Sentence Id', 'Token Selector']].values
+                sen_ids = output_data[output_data['Token Selector'].isin(chosen_tokens)][
+                    ['Sentence Id', 'Token Selector']].values
                 examples = []
                 with torch.no_grad():
                     for sen_id, token in tqdm(sen_ids):
