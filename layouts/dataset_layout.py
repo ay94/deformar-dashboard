@@ -29,7 +29,7 @@ def get_layout():
                     'cursor': 'pointer',
                     'border-radius': '4px'
                 }),
-                html.Div(id='initialize_dataset')
+                html.Div(id='initialize_dataset_tab')
             ]),
 
 
@@ -218,7 +218,5 @@ def get_layout():
 
             ]),
         html.Div(id='error_rate'),
-        dcc.Graph(id="test", figure=go.Figure()),
-
 
     ])

@@ -11,6 +11,7 @@ def get_layout():
                     style={
                         "display": "flex",
                         "align-items": "center",
+                        'flex-direction': 'column',
                         "justify-content": "center",
                         "height": "30vh",  # Adjust the height as needed
                     },
@@ -35,7 +36,9 @@ def get_layout():
                             ],
                             value=[]
                         ),
-                ]),
+                        html.Div(id='initialize_decision')
+                    ]),
+
                 dash_table.DataTable(
                     id='selector_datatable',
                     columns=[],
@@ -54,17 +57,35 @@ def get_layout():
                     page_current=0,
                     page_size=10,
                 ),
+            ]),
+        html.Div(id="save_decision_points", style={"display": "none"}),
+        html.Div(id="save_measure_points", style={"display": "none"}),
+        html.H3("Selector Scatter Plot", style={'text-align': 'center'}),
+        html.Div(
+            style={"width": "100%", 'display': 'inline-block', },
+            children=[
 
-                html.Div(id="save_decision_points", style={"display": "none"}),
-                html.Div(id="save_measure_points", style={"display": "none"}),
-                html.H3("Selector Scatter Plot", style={'text-align': 'center'}),
                 dcc.Loading(
                     id='selector_loading',
                     type='default',
                     children=[
                         dcc.Graph(id="selector_scatter", figure=go.Figure()),
                     ]
-                )
+                ),
+
+                html.Button('Generate Selector Plot', id='generate_selector_plot', n_clicks=0, style={
+                    'background-color': '#3DAFA8',
+                    'color': 'white',
+                    'border': 'none',
+                    'padding': '10px 20px',
+                    'text-align': 'center',
+                    'text-decoration': 'none',
+                    'display': 'inline-block',
+                    'font-size': '16px',
+                    'margin': '4px 2px',
+                    'cursor': 'pointer',
+                    'border-radius': '4px'
+                }),
 
             ]),
         html.H3("Decision Boundary Scatter Plot", style={'text-align': 'center'}),
@@ -225,7 +246,7 @@ def get_layout():
                  children=[
                      # Default text when data is not available
                      "No Data Selected.",
-        ]),
+                 ]),
         html.H3("Selection Token Ambiguity", style={'text-align': 'center'}),
         dcc.Loading(
             id='selection_token_ambiguity_loading',

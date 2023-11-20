@@ -8,6 +8,7 @@ def get_layout():
                 style={
                     "display": "flex",
                     "align-items": "center",
+                    'flex-direction': 'column',
                     "justify-content": "center",
                     "height": "30vh",  # Adjust the height as needed
                 },
@@ -32,6 +33,7 @@ def get_layout():
                         ],
                         value=[]
                     ),
+                    html.Div(id='initialize_performance_tab')
                 ]),
             html.Div(
                 style={

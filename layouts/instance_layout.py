@@ -7,6 +7,7 @@ def get_layout():
         html.Div(
             style={'display': 'flex',
                    'justify-content': 'center',
+                   'flex-direction': 'column',
                    'align-items': 'center',
                    'height': '50vh'
                    },
@@ -31,7 +32,7 @@ def get_layout():
                     'cursor': 'pointer',
                     'border-radius': '4px'
                 }),
-
+                html.Div(id='initialize_instance_tab')
             ],
         ),
 
