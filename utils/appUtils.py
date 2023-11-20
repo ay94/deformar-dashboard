@@ -37,6 +37,7 @@ columns_map = {
     'pr_entity': 'Entity Prediction', 'error_type': 'Error Type', 'prediction_entropy': 'Prediction Entropy',
     'x': 'X Coordinate', 'y': 'Y Coordinate', 'pre_x': 'Pretrained X Coordinate', 'pre_y': 'Pretrained Y Coordinate',
     'confidences': 'Confidence', 'variability': 'Variability', 'O': 'O Confidence', 'B-PERS': 'B-PERS Confidence',
+    'B-PER': 'B-PERS Confidence', 'I-PER': 'I-PERS Confidence',
     'I-PERS': 'I-PERS Confidence', 'B-ORG': 'B-ORG Confidence', 'I-ORG': 'I-ORG Confidence',
     'B-LOC': 'B-LOC Confidence',
     'I-LOC': 'I-LOC Confidence', 'B-MISC': 'B-MISC Confidence', 'I-MISC': 'I-MISC Confidence', '3_clusters': 'K=3',
