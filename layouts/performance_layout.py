@@ -213,7 +213,7 @@ def get_layout():
                 ]
             ),
             html.Div(id="error_example_ids", style={"display": "none"}),
-            html.H3("Error Only Scatter", style={'text-align': 'center'}),
+            html.H3("Filtered Only Scatter", style={'text-align': 'center'}),
             html.Div(
                 children=[
 
