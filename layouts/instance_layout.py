@@ -133,9 +133,9 @@ def get_layout():
         html.Div(
             children=[
                 html.H3("Pretrained"),
-                html.Iframe(id="pre_attention_view", style={"width": "25%", "height": "500px"}),
+                html.Iframe(id="pre_attention_view", style={"width": "60%", "height": "1000px"}),
                 html.H3("Finetuned"),
-                html.Iframe(id="fin_attention_view", style={"width": "25%", "height": "500px"}),
+                html.Iframe(id="fin_attention_view", style={"width": "60%", "height": "1000px"}),
                 dcc.Graph(id="instance_training_impact", figure=go.Figure()),
             ],
             style={'display': 'flex', 'justify-content': 'center', 'align-items': 'center'}
