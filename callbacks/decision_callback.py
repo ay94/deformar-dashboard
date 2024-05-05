@@ -252,7 +252,7 @@ def register_decision_callbacks(app, dataset_obj):
             raise PreventUpdate
         else:
             selected_point = pd.DataFrame(selectedData["points"])[['x', 'y']]
-            selected_point = selected_point.rename(columns={'x': 'X Coordinate', 'y': 'Y Coordinate'})
+            selected_point = selected_point.rename(columns={'x': x, 'y': y})
             # selected_point = pd.DataFrame(selectedData["points"])[["X Coordinate", "Y Coordinate"]]
             # selected_point = selected_point.rename(columns={'X Coordinate': x, 'Y Coordinate': y})
 
