@@ -112,10 +112,10 @@ class DatasetConfig:
         self.analysis_df, self.light_df = self.clean_analysis_df(analysis_df, token_score, pre_df)
 
         if self.split != 'train':
-            self.light_train_df = pd.read_json(
+            self.light_train_df = self.rename_data(pd.read_json(
                 self.file_handler.cr_fn(f'{self.dataset_name}/light_train_df.jsonl.gz'),
                 lines=True
-            )
+            ))
         else:
             self.light_train_df = self.analysis_df.copy()[train_columns]
 
