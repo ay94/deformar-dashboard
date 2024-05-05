@@ -123,7 +123,7 @@ def register_error_callbacks(app, dataset_obj):
     )
     def add_entity_options(metric):
         if metric == "errors" and dataset_obj.loaded:
-            return dataset_obj.entity_prediction['entity'].unique()
+            return dataset_obj.entity_prediction['Entity'].unique()
         else:
             raise PreventUpdate
 
@@ -373,7 +373,7 @@ def register_error_callbacks(app, dataset_obj):
                 chosen_tokens = chosen_tokens
             output_data = dataset_obj.analysis_df.copy()
             split_data = dataset_obj.instanceLevel.test_dataset
-            sen_ids = output_data[output_data['token_ids'].isin(chosen_tokens)][['sen_id', 'token_ids']].values
+            sen_ids = output_data[output_data['Token Selector'].isin(chosen_tokens)][['Sentence Id', 'Token Selector']].values
             examples = []
             with torch.no_grad():
                 for sen_id, token in tqdm(sen_ids):
