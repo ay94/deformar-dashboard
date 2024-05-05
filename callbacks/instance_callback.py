@@ -10,6 +10,11 @@ from . import AttentionSimilarity, Datasets
 
 from . import hover_data, train_hover_data
 
+hover_choice = {
+    'train':train_hover_data,
+    'test': hover_data
+}
+
 
 def register_instance_callbacks(app, dataset_obj):
     @app.callback(
@@ -232,7 +237,7 @@ def register_instance_callbacks(app, dataset_obj):
                     symbol='Class Agreement',
                     color_discrete_map=color_map,
                     template='ggplot2',
-                    hover_data=hover_data)
+                    hover_data=hover_choice[split])
                 if 'group' in scatter_mode:
                     examples_fig.update_layout(scattermode="group")
                 examples_fig.update_xaxes(
@@ -276,7 +281,7 @@ def register_instance_callbacks(app, dataset_obj):
                 data = dataset_obj.analysis_df.copy()
                 examples = dataset_obj.corpus[split]
             try:
-                instance_df = data[data['Sentence Id'] == example_id].copy()
+                instance_df = data[data['Token Selector'].apply(lambda x: x.split('@#')[1]) == example_id].copy()
                 example_words = examples[int(example_id)][1]
                 example_labels = examples[int(example_id)][2]
             except:
@@ -302,7 +307,7 @@ def register_instance_callbacks(app, dataset_obj):
                 symbol='Class Agreement',
                 color_discrete_map=color_map,
                 template='ggplot2',
-                hover_data=train_hover_data)
+                hover_data=hover_choice[split])
             if 'group' in scatter_mode:
                 example_fig.update_layout(scattermode="group")
             example_fig.update_xaxes(
