@@ -30,8 +30,8 @@ class DashboardData:
             self.analysis_data['Word Pieces'] = self.analysis_data['Word Pieces'].apply(
                 lambda x: ', '.join(x) if isinstance(x, list) else x
             )
-        self.analysis_data['Normalized Token Entropy'] = DashboardData.normalized_entropy(self.analysis_data, 'Local Token Entropy', 'Token Max Entropy')  # filling 0/0 division as it generates Nan
-        self.analysis_data['Normalized Word Entropy'] = DashboardData.normalized_entropy(self.analysis_data, 'Local Token Entropy', 'Token Max Entropy')  # filling 0/0 division as it generates Nan
+        self.analysis_data['Normalized Token Entropy'] = DashboardData.normalized_entropy(self.analysis_data, 'Local Token Entropy', 'Token Max Entropy', 'Normalized Token Entropy')  # filling 0/0 division as it generates Nan
+        self.analysis_data['Normalized Word Entropy'] = DashboardData.normalized_entropy(self.analysis_data, 'Local Token Entropy', 'Token Max Entropy', 'Normalized Token Entropy')  # filling 0/0 division as it generates Nan
     @staticmethod
     def round_floats(df):
         for col in df.select_dtypes(include=['float']).columns:
@@ -144,3 +144,10 @@ class DataManager:
             # Delegate the loading and caching to load_variant method
             self.variants_data[variant] = self.load_variant(variant)
         return self.variants_data
+
+    def is_data_loaded(self):
+        """Checks if all variants have data loaded in the cache."""
+        for variant in self.variants:
+            if self.cache.get(variant) is None:
+                return False  # Return False if any variant is not loaded
+        return True  # Return True if all variants are loaded

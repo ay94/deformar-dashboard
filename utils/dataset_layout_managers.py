@@ -1,8 +1,6 @@
 from dash import html, dcc
-from dash import html, dash_table
-import plotly.graph_objs as go
-
-from utils.layout_managers import CustomButton, generate_dropdown_options, DropdownContainer, CustomDataTable, SectionContainer
+from dash import html
+from utils.layout_managers import CustomButton, generate_dropdown_options, DropdownContainer, SectionContainer
 
 
 
@@ -40,14 +38,7 @@ class SummarySection:
             options=generate_dropdown_options(config.get('statistics_columns'))  # Assuming you have a function to generate options
         )
         self.generate_summary_button = CustomButton('Generate Summary Statistics', 'generate_summary').render()
-       # Containers for the data table and message
-        
-        
-        self.no_data_message = html.Div(
-            "Please select a column and click 'Generate Summary Statistics' to view data.",
-            id="no_summary_table",
-            style={'display': 'block'}  # Initially visible
-        )
+    
 
     def render(self):
         
@@ -56,7 +47,6 @@ class SummarySection:
                     [
                     self.statistical_dropdown,
                     self.generate_summary_button,
-                    self.no_data_message,  # Include the message
                     ]
                 ).render()
        
@@ -80,8 +70,6 @@ class DistributionSection:
         )
         self.plot_button = CustomButton('Plot Distribution', 'plot_distribution').render()
         
-    
-
     def render(self):
         return SectionContainer(
                     "Distributions", 
@@ -102,13 +90,7 @@ class ResultsSection:
             options=generate_dropdown_options(config.get('results'))  # Assuming you have a function to generate options
         )
         self.view_results_type_button = CustomButton('View Results', 'view_results_type').render()
-       # Containers for the data table and message
-        self.no_data_message = html.Div(
-            "Please select a type of results and click 'View Results' to view data.",
-            id="no_results_table",
-            style={'display': 'block'}  # Initially visible
-        )
-
+    
     def render(self):
         
         return SectionContainer(
@@ -116,7 +98,6 @@ class ResultsSection:
                     [
                     self.results_dropdown,
                     self.view_results_type_button,
-                    self.no_data_message,  # Include the message
                     ]
                 ).render()
 
@@ -134,8 +115,6 @@ class CustomDistributionSection:
         
         self.plot_button = CustomButton('Plot Custom Distribution', 'plot_custom_distribution').render()
         
-    
-
     def render(self):
         return SectionContainer(
                     "Custom Distributions", 
@@ -155,23 +134,14 @@ class DatasetTabLayout:
     def render(self):
         
         select_variant_container = VariantSection(self.variants).render()
-        
-               
-        
-        
         #  Summary Statistics Section Container 
         summary_container = SummarySection(self.dataset_tab_config).render()  # Create and render the distribution section
-        
-        statistics_data_table = html.Div(
-            CustomDataTable(
-                table_id='summary_statistics_table',
-            ).render(),
-            id="statistics_table_container",
-            style={'display': 'none'}  # Initially hidden
+        summary_statistics_container = html.Div(
+            id="summary_container", 
+            style={'width': '50%', 'height': '100%'}  # Initially hidden
         )
         
         # Distribution Section Container 
-        
         distribution_container = DistributionSection(self.dataset_tab_config).render()  # Create and render the distribution section
         
         distribution_graph_container = html.Div(
@@ -182,28 +152,23 @@ class DatasetTabLayout:
         results_container = ResultsSection(self.dataset_tab_config).render()  
         
         results_data_table = html.Div(
-            CustomDataTable(
-                table_id='results_data_table',
-            ).render(),
-            id="results_table_container",
-            style={'display': 'none'}  # Initially hidden
+            id="results_output_container", 
+            style={'width': '50%', 'height': '100%'}  # Initially hidden
         )
+        
         custom_distribution_container = CustomDistributionSection(self.dataset_tab_config).render()
         
         custom_distribution_graph_container = html.Div(
             id="custom_distribution_graph_container", 
             style={'width': '100%', 'height': '100%'}  # Initially hidden
         )
-
-
         
-      
         layout = html.Div(
                     className='main-container',
                     children=[
                         select_variant_container,
                         summary_container,
-                        statistics_data_table,
+                        summary_statistics_container,
                         distribution_container,
                         distribution_graph_container,
                         results_container,

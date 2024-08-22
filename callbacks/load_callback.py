@@ -1,5 +1,4 @@
 import time
-
 from dash import callback_context, html, no_update
 from dash.dependencies import Input, Output, State
 

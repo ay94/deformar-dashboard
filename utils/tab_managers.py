@@ -7,6 +7,8 @@ from utils.layout_managers import CustomDataTable
 import pandas as pd
 from dataclasses import dataclass
 from dash import html
+from scipy.stats import gaussian_kde
+import numpy as np
 
 @dataclass(frozen=True)
 class TokenDistributionColumns:
@@ -54,67 +56,315 @@ class DatasetTabManager:
         """Retrieve specific variant data."""
         return self.variants_data.get(variant, None)
 
-    def generate_statistics(self, data, columns):
-        """Generate statistical summaries for given columns."""
-        if not columns:
-            return [], []
-
-        valid_columns = [col for col in columns if col in data.columns]
-        if not valid_columns:
-            return [], []
-
-        describe_df = data[valid_columns].describe().reset_index().rename(columns={'index': 'Statistics'})
-        columns = [{'name': col, 'id': col} for col in describe_df.columns]
-        data = describe_df.to_dict('records')
-
-        return columns, data
-
     def filter_ignored(self, data):
         """Filter data based on a provided condition."""
         return data[data['Labels'] != -100] 
     
-    def generate_distribution_plot(self, data, distribution_column, categorical_column=None, kde=False):
-        """Generate a distribution plot based on the provided columns."""
-        if distribution_column and categorical_column:
-            # Use violin plot when both distribution_column and categorical_column are provided
-            complex_distribution = px.violin(
+    def generate_statistics(self, data, columns):
+        """Generate statistical summaries for given columns."""
+        if not columns:
+            return None
+
+        valid_columns = [col for col in columns if col in data.columns]
+        if not valid_columns:
+            return None
+
+        statistics_df = data[valid_columns].describe().reset_index().rename(columns={'index': 'Statistics'})
+        return statistics_df
+
+    def generate_summary_statistics(self, variant, statistical_columns):
+        """Generates summary statistics and handles the output for the summary table."""
+        tab_data = self.get_tab_data(variant)
+        if not tab_data:
+            return None  # Indicate that no data was found
+
+        filtered_data = self.filter_ignored(tab_data.analysis_data)
+
+        data = self.generate_statistics(filtered_data, statistical_columns)
+        if data is None or data.empty:
+            return None  # Indicate that the data is empty
+
+        return CustomDataTable(
+            table_id="summary_data_table",
+            data=data.to_dict('records'),
+            columns=[{"name": col, "id": col} for col in data.columns]
+        ).render()
+    # def generate_distribution_plot(self, data, distribution_column, categorical_column=None, kde=False):
+    #     """Generate a distribution plot based on the provided columns."""
+    #     if distribution_column and categorical_column:
+    #         # Use violin plot when both distribution_column and categorical_column are provided
+    #         complex_distribution = px.violin(
+    #             data, 
+    #             y=distribution_column, 
+    #             x=categorical_column, 
+    #             points="all",  # Shows all points
+    #             box=True,  # Adds a box plot inside the violin
+    #             title=f'Violin Plot of {distribution_column} by {categorical_column}',
+    #             template='ggplot2'
+    #         )
+    #         complex_distribution.update_layout(
+    #             yaxis_title=distribution_column,
+    #             xaxis_title=categorical_column
+    #         )
+    #         return complex_distribution
+
+    #     elif distribution_column:
+    #         # Create histogram when only distribution_column is provided
+    #         distribution_fig = px.histogram(
+    #             data, 
+    #             x=distribution_column, 
+    #             nbins=30, 
+    #             marginal="rug",
+    #             title=f'Distribution of {distribution_column}',
+    #             template='ggplot2'
+    #         )
+    #         distribution_fig.update_traces(marker=dict(line=dict(width=1.5, color='#FFFFFF')))
+    #         distribution_fig.update_layout(yaxis_title="Frequency")
+
+    #         return distribution_fig
+
+    #     return None  # Return None if no valid plot is generated
+    # def generate_violin_plot(self, data, distribution_column, categorical_column):
+    #     """Generate a violin plot with matching theme and style."""
+    #     violin_fig = px.violin(
+    #         data, 
+    #         y=distribution_column, 
+    #         x=categorical_column, 
+    #         points="all",  # Shows all points
+    #         box=True,  # Adds a box plot inside the violin
+    #         title=f'Violin Plot of {distribution_column} by {categorical_column}',
+    #         template='plotly_dark'  # Using the same dark theme
+    #     )
+
+    #     # Update layout to match your preferred color theme
+    #     violin_fig.update_traces(
+    #         line_color='#3DAFA8',  # Use the same color as your button for lines
+    #         box_line_color='#3DAFA8',  # Matching the box plot lines with the button color
+    #         meanline_color='#3DAFA8',  # Matching the mean line color
+    #     )
+        
+    #     violin_fig.update_layout(
+    #         yaxis_title=distribution_column,
+    #         xaxis_title=categorical_column,
+    #         autosize=True,
+    #         margin=dict(l=10, r=10, t=30, b=30),  # Adjust margins as needed
+    #         font=dict(color="#FFFFFF"),  # Set font color to white for contrast
+    #         plot_bgcolor="rgba(0, 0, 0, 0)",  # Transparent plot background
+    #         paper_bgcolor="rgba(0, 0, 0, 0)"  # Transparent paper background
+    #     )
+
+    #     return violin_fig
+
+    # def generate_distribution_plot(self, data, distribution_column):
+    #     """Generate a distribution plot based on the provided columns.""" 
+    #     # Create histogram when only distribution_column is provided
+    #     try:
+    #         distribution_fig = px.histogram(
+    #             data, 
+    #             x=distribution_column, 
+    #             nbins=30, 
+    #             marginal="rug",
+    #             title=f'Distribution of {distribution_column}',
+    #             template='seaborn'  # Use plotly_dark for dark mode
+    #         )
+    #         distribution_fig.update_traces(marker=dict(line=dict(width=1.5, color='#FFFFFF'), color='#3DAFA8'))
+    #         distribution_fig.update_layout(yaxis_title="Frequency")
+    #         kde=True
+    #         if kde:
+    #             kde = gaussian_kde(data[distribution_column].dropna())
+    #             x_range = np.linspace(data[distribution_column].min(), data[distribution_column].max(), 1000)
+    #             y_kde = kde(x_range)
+
+    #             distribution_fig.add_trace(
+    #                 go.Scatter(x=x_range, y=y_kde * len(data) * np.diff(x_range)[0], mode='lines',
+    #                         name='KDE', line=dict(color='#FF8C00'))
+    #             )
+    #         return distribution_fig
+    #     except Exception as e:
+    #         logging.error(f"Failed to generate histogram: {str(e)}")
+    #         return None
+
+    
+    # def generate_distribution_or_violin(self, variant, distribution_column, categorical_column):
+    #     tab_data = self.get_tab_data(variant)
+    #     selected_df = self.filter_ignored(tab_data.analysis_data)
+        
+    #     if not distribution_column or not tab_data:
+    #         return html.Span("Please select a column and click 'Plot Distribution' to view plot.")
+        
+    #     figure = None
+    #     if distribution_column and categorical_column:
+    #         figure = self.generate_violin_plot(
+    #             selected_df,
+    #             distribution_column,
+    #             categorical_column
+    #         )
+    #     else:
+    #         figure = self.generate_distribution_plot(
+    #             selected_df,
+    #             distribution_column,
+    #             categorical_column=categorical_column,
+    #         )
+
+    #     if figure:
+    #         figure.update_layout(autosize=True)
+    #     return figure
+    
+    def generate_violin_plot(self, data, distribution_column, categorical_column):
+        """Generate a violin plot with matching theme and style."""
+        logging.debug(f"Generating violin plot for {distribution_column} by {categorical_column}")
+        try:
+            violin_fig = px.violin(
                 data, 
                 y=distribution_column, 
                 x=categorical_column, 
                 points="all",  # Shows all points
                 box=True,  # Adds a box plot inside the violin
                 title=f'Violin Plot of {distribution_column} by {categorical_column}',
-                template='ggplot2'
+                template='plotly_white'  # Using the same dark theme
             )
-            complex_distribution.update_layout(
-                yaxis_title=distribution_column,
-                xaxis_title=categorical_column
-            )
-            return complex_distribution
 
-        elif distribution_column:
-            # Create histogram when only distribution_column is provided
+            # Update layout to match your preferred color theme
+            violin_fig.update_traces(
+                line_color='#3DAFA8',  # Use the same color as your button for lines
+                box_line_color='#3DAFA8',  # Matching the box plot lines with the button color
+                meanline_color='#3DAFA8',  # Matching the mean line color
+                marker=dict(color='#FF7F7F')  # Change the color of the points to match your theme
+
+            )
+            
+            violin_fig.update_layout(
+                yaxis_title=distribution_column,
+                xaxis_title=categorical_column,
+                autosize=True,
+                margin=dict(l=10, r=10, t=30, b=30),  # Adjust margins as needed
+                font=dict(color="#FFFFFF"),  # Set font color to white for contrast
+                # plot_bgcolor="rgba(0, 0, 0, 0)",  # Transparent plot background
+                # paper_bgcolor="rgba(0, 0, 0, 0)"  # Transparent paper background
+            )
+
+            return violin_fig
+        except Exception as e:
+            logging.error(f"Failed to generate violin plot: {str(e)}")
+            return None
+    def generate_distribution_plot(self, data, distribution_column, kde=True):
+        """Generate a distribution plot based on the provided columns.""" 
+        try:
             distribution_fig = px.histogram(
                 data, 
                 x=distribution_column, 
                 nbins=30, 
                 marginal="rug",
                 title=f'Distribution of {distribution_column}',
-                template='ggplot2'
+                template='plotly_white'  # Use plotly_dark for dark mode
             )
-            distribution_fig.update_traces(marker=dict(line=dict(width=1.5, color='#FFFFFF')))
+            distribution_fig.update_traces(marker=dict(line=dict(width=1.5, color='#FFFFFF'), color='#3DAFA8'))
             distribution_fig.update_layout(yaxis_title="Frequency")
 
+            if kde:
+                kde = gaussian_kde(data[distribution_column].dropna())
+                x_range = np.linspace(data[distribution_column].min(), data[distribution_column].max(), 1000)
+                y_kde = kde(x_range)
+
+                distribution_fig.add_trace(
+                    go.Scatter(x=x_range, y=y_kde * len(data) * np.diff(x_range)[0], mode='lines',
+                            name='KDE', line=dict(color='#FF7F7F'))  # Slightly orange-yellow color for KDE
+                )
             return distribution_fig
+        except Exception as e:
+            logging.error(f"Failed to generate histogram: {str(e)}")
+            return None
 
-        return None  # Return None if no valid plot is generated
+    # def generate_distribution_or_violin(self, variant, distribution_column, categorical_column):
+    #     tab_data = self.get_tab_data(variant)
+    #     selected_df = self.filter_ignored(tab_data.analysis_data)
+        
+    #     if not distribution_column or not tab_data:
+    #         return html.Span("Please select a column and click 'Plot Distribution' to view plot.")
+        
+    #     figure = None
+    #     if distribution_column and categorical_column:
+    #         figure = self.generate_violin_plot(
+    #             selected_df,
+    #             distribution_column,
+    #             categorical_column
+    #         )
+    #     else:
+    #         figure = self.generate_distribution_plot(
+    #             selected_df,
+    #             distribution_column,
+    #         )
+    #     if figure:
+    #         figure.update_layout(autosize=True)
 
-    def get_results_data(self, tab_data, results_type):
-        if results_type == ResultsType.TRAINING:
-            return tab_data.results
-        elif results_type == ResultsType.CLUSTERING:
-            return tab_data.kmeans_results
+    #     return None
+    def generate_distribution_or_violin(self, variant, distribution_column, categorical_column):
+        tab_data = self.get_tab_data(variant)
+        selected_df = self.filter_ignored(tab_data.analysis_data)
+        
+        if not distribution_column or not tab_data:
+            return html.Span("Please select a column and click 'Plot Distribution' to view plot.")
+        
+        figure = None
+        if distribution_column and categorical_column:
+            figure = self.generate_violin_plot(
+                selected_df,
+                distribution_column,
+                categorical_column
+            )
+        else:
+            figure = self.generate_distribution_plot(
+                selected_df,
+                distribution_column,
+            )
+        
+        if figure:
+            figure.update_layout(autosize=True)
+            return figure
+
         return None
+
+
+
+
+    # def get_results_data(self, tab_data, results_type):
+    #     if results_type == ResultsType.TRAINING:
+    #         return tab_data.results
+    #     elif results_type == ResultsType.CLUSTERING:
+    #         return tab_data.kmeans_results
+    #     return None
+
+    def get_results_data(self, variant, results_type):
+        """Fetch results data for a specific variant and results type."""
+        tab_data = self.get_tab_data(variant)
+        
+        if not tab_data:
+            logging.error("No data available for the selected variant.")
+            return None
+        
+        try:
+            results_type_enum = ResultsType(results_type)
+        except ValueError:
+            logging.error("Invalid results type selected.")
+            return None
+
+        if results_type_enum == ResultsType.TRAINING:
+            data = tab_data.results
+        elif results_type_enum == ResultsType.CLUSTERING:
+            data = tab_data.kmeans_results
+        else:
+            logging.error("Unknown results type.")
+            return None
+
+        if data is None or data.empty:
+            logging.warning("No results data available for the selected criteria.")
+            return None
+
+        return CustomDataTable(
+            table_id="results_data_table",
+            data=data.to_dict('records'),
+            columns=[{"name": col, "id": col} for col in data.columns]
+        ).render()
 
     
     def generate_empty_plot(self, message="No data available"):
@@ -188,9 +438,7 @@ class DatasetTabManager:
     
     def create_tag_ambiguity_table(self, selected_df):
         columns = TagAmbiguityColumns()
-        
 
-        
         # Perform the initial group by and aggregation
         try:
             tag_ambiguity_analysis = selected_df.groupby([columns.TRUE_LABELS, columns.CORE_TOKENS]).agg(
@@ -199,14 +447,9 @@ class DatasetTabManager:
                 mean_token_entropy=(columns.TOKEN_ENTROPY, 'mean')
             ).reset_index()
         except Exception as e:
-            logging.error(f"Error during initial mean calculation step: {e}")
-            return html.Div(
-                "Failed to calculate initial means for tag ambiguity analysis.",
-                style={'color': 'red', 'textAlign': 'center', 'marginTop': '20px'}
-            )
-            
-            
-
+            logging.error("Error during initial mean calculation step: %s", e)
+            return None
+                
         # Further aggregation to summarize the results
         try:
             tag_ambiguity_summary = tag_ambiguity_analysis.groupby(columns.TRUE_LABELS).agg(
@@ -214,24 +457,102 @@ class DatasetTabManager:
                 overall_mean_inconsistency=(columns.MEAN_INCONSISTENCY, 'mean'),
                 overall_mean_token_entropy=(columns.MEAN_TOKEN_ENTROPY, 'mean')
             ).reset_index().round(3)
+            
+            tag_ambiguity_summary = tag_ambiguity_summary.rename(columns={
+                'overall_mean_consistency': 'Overall Mean Consistency',
+                'overall_mean_inconsistency': 'Overall Mean Inconsistency',
+                'overall_mean_token_entropy': 'Overall Mean Token Entropy'
+            })
         except Exception as e:
-            logging.error(f"Error during overall mean aggregation step: {e}")
-            return html.Div(
-                "Failed to calculate overall means for tag ambiguity summary.",
-                style={'color': 'red', 'textAlign': 'center', 'marginTop': '20px'}
-            )
+            logging.error("Error during overall mean aggregation step: %s", e)
+            return None
+
         if tag_ambiguity_summary.empty:
-            return html.Div(
-                "No data available for the selected criteria.",
-                style={'color': 'red', 'textAlign': 'center', 'marginTop': '20px'}
-            )
+            logging.warning("No data available for the selected criteria.")
+            return None
+
         # Use the CustomDataTable class to render the DataTable
         return CustomDataTable(
             table_id='tag_ambiguity_table',
             data=tag_ambiguity_summary.to_dict('records'),
             columns=[{"name": i, "id": i} for i in tag_ambiguity_summary.columns],
-            style_header={'text-align': 'center', 'background-color': '#555555', 'color': 'white'},
-            page_size=11
         ).render()
+    
+    def custom_distributions(self, custom_distribution_type, variant):
+        
+
+        try:
+            distribution_type_enum = DistributionsType(custom_distribution_type)
+        except ValueError:
+            logging.error("Invalid distribution type selected.")
+            return None
+
+        tab_data = self.get_tab_data(variant)
+        if not tab_data:
+            logging.error("No tab data available.")
+            return None
+
+        selected_df = self.filter_ignored(tab_data.analysis_data)
+        if selected_df.empty:
+            logging.error("No relevant data available after filtering.")
+            return None
+
+        if distribution_type_enum == DistributionsType.TOKEN:
+            result = self.create_token_distribution_table(selected_df)
+        elif distribution_type_enum == DistributionsType.TAG:
+            result = self.create_tag_ambiguity_table(selected_df)
+        else:
+            logging.error("Invalid distribution type.")
+            result = None
+
+        return result
+
+
+    
+    # def create_tag_ambiguity_table(self, selected_df):
+    #     columns = TagAmbiguityColumns()
+        
+
+        
+    #     # Perform the initial group by and aggregation
+    #     try:
+    #         tag_ambiguity_analysis = selected_df.groupby([columns.TRUE_LABELS, columns.CORE_TOKENS]).agg(
+    #             mean_consistency=(columns.CONSISTENCY, 'mean'),
+    #             mean_inconsistency=(columns.INCONSISTENCY, 'mean'),
+    #             mean_token_entropy=(columns.TOKEN_ENTROPY, 'mean')
+    #         ).reset_index()
+    #     except Exception as e:
+    #         logging.error(f"Error during initial mean calculation step: {e}")
+    #         return html.Div(
+    #             "Failed to calculate initial means for tag ambiguity analysis.",
+    #             style={'color': 'red', 'textAlign': 'center', 'marginTop': '20px'}
+    #         )
+            
+            
+
+    #     # Further aggregation to summarize the results
+    #     try:
+    #         tag_ambiguity_summary = tag_ambiguity_analysis.groupby(columns.TRUE_LABELS).agg(
+    #             overall_mean_consistency=(columns.MEAN_CONSISTENCY, 'mean'),
+    #             overall_mean_inconsistency=(columns.MEAN_INCONSISTENCY, 'mean'),
+    #             overall_mean_token_entropy=(columns.MEAN_TOKEN_ENTROPY, 'mean')
+    #         ).reset_index().round(3)
+    #     except Exception as e:
+    #         logging.error(f"Error during overall mean aggregation step: {e}")
+    #         return html.Div(
+    #             "Failed to calculate overall means for tag ambiguity summary.",
+    #             style={'color': 'red', 'textAlign': 'center', 'marginTop': '20px'}
+    #         )
+    #     if tag_ambiguity_summary.empty:
+    #         return html.Div(
+    #             "No data available for the selected criteria.",
+    #             style={'color': 'red', 'textAlign': 'center', 'marginTop': '20px'}
+    #         )
+    #     # Use the CustomDataTable class to render the DataTable
+    #     return CustomDataTable(
+    #         table_id='tag_ambiguity_table',
+    #         data=tag_ambiguity_summary.to_dict('records'),
+    #         columns=[{"name": i, "id": i} for i in tag_ambiguity_summary.columns],
+    #     ).render()
 
 

@@ -130,3 +130,9 @@
 	background-color: #3DAFA8;
 	color: white;
 }
+
+.prompt-message {
+	color: #3DAFA8;
+	text-align: center;
+	margin-top: 20px;
+}

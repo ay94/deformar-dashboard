@@ -77,32 +77,6 @@ class CustomButton:
         return html.Button(self.label, id=self.id, className=self.class_name, **self.kwargs)
 
 
-# class CustomDataTable:
-#     def __init__(self, table_id, style_header=None, page_size=10, **kwargs):
-#         self.table_id = table_id
-#         self.style_header = style_header or {'text-align': 'center', 'background-color': '#3DAFA8', 'color': 'white'}
-#         self.page_size = page_size
-#         self.kwargs = kwargs
-
-#     def render(self):
-#         return dash_table.DataTable(
-#             id=self.table_id,
-#             columns=[],
-#             data=[],
-#             style_header=self.style_header,
-#             editable=True,
-#             filter_action="native",
-#             sort_action="native",
-#             sort_mode='multi',
-#             column_selectable="single",
-#             row_selectable='multi',
-#             row_deletable=True,
-#             page_action='native',
-#             page_current=0,
-#             page_size=self.page_size,
-#             **self.kwargs
-#         )
-
 class CustomDataTable:
     def __init__(self, table_id, data=None, columns=None, style_header=None, page_size=10, **kwargs):
         if table_id is None:
@@ -133,15 +107,11 @@ class CustomDataTable:
             **self.kwargs
         )
 
-
-
-
 class DropdownContainer:
         def __init__(self, label_text, dropdown, output_container):
             self.label_text = label_text
             self.dropdown = dropdown
             self.output_container = output_container
-   
             
         def render(self):
             return html.Div(
