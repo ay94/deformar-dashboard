@@ -145,9 +145,21 @@ class DataManager:
             self.variants_data[variant] = self.load_variant(variant)
         return self.variants_data
 
-    def is_data_loaded(self):
-        """Checks if all variants have data loaded in the cache."""
+    # def is_data_loaded(self):
+    #     """Checks if all variants have data loaded in the cache."""
+    #     for variant in self.variants:
+    #         if self.cache.get(variant) is None:
+    #             return False  # Return False if any variant is not loaded
+    #     return True  # Return True if all variants are loaded
+    def is_any_variant_loaded(self):
+        """
+        Check if any variant is loaded in the cache.
+
+        Returns:
+            bool: True if at least one variant is loaded, False otherwise.
+        """
         for variant in self.variants:
-            if self.cache.get(variant) is None:
-                return False  # Return False if any variant is not loaded
-        return True  # Return True if all variants are loaded
+            if self.cache.get(variant) is not None:
+                return True  # Return True if any variant is loaded
+        return False  # Return False if no variants are loaded
+

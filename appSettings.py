@@ -1,6 +1,10 @@
 from dash import Dash, dcc, html, Output, Input
 from layouts import load_layout, dataset_layout, decision_layout, performance_layout, instance_layout
-from callbacks import load_callback, dataset_callback
+from callbacks import (
+    load_callback,
+    dataset_callback,
+    decision_callback
+)
 from utils.data_managers import DataManager
 
 
@@ -45,8 +49,7 @@ def start_app(config_manager):
             dataset_tab = dataset_layout.get_layout(config_manager)
             return dataset_tab
         elif tab == 'decision':
-            
-            return decision_layout.get_layout()
+            return decision_layout.get_layout(config_manager)
         elif tab == 'performance':
             
             return performance_layout.get_layout()
@@ -61,13 +64,14 @@ def start_app(config_manager):
         [Input('data-loading-check', 'n_intervals')]  # Use an interval to periodically check the cache
     )
     def enable_tabs_based_on_cache(n_intervals):
-        if data_manager.is_data_loaded():  # Check if all data is loaded
+        if data_manager.is_any_variant_loaded():  # Check if all data is loaded
             return [False] * (len(app_config.tabs) - 1)  # Enable all tabs except the load tab
         return [True] * (len(app_config.tabs) - 1)  # Keep other tabs disabled if data is not loaded
 
     
     variants_data = load_callback.register_callbacks(app, data_manager)
     dataset_callback.register_callbacks(app, variants_data)    
+    decision_callback.register_callbacks(app, variants_data)    
     return app
 
 

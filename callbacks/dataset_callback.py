@@ -1,9 +1,10 @@
 from dash.exceptions import PreventUpdate
 from dash.dependencies import Input, Output, State
-from dash import  dcc, html
+from dash import  dcc, html, no_update
+
 import plotly.graph_objs as go
 
-from utils.tab_managers import DatasetTabManager
+from utils.dataset_tab_managers import DatasetTabManager
 
 def register_callbacks(app, variants_data):
     tab_manager = DatasetTabManager(variants_data)
@@ -71,7 +72,13 @@ def register_callbacks(app, variants_data):
 
         # Check if a valid figure was returned
         if isinstance(figure, go.Figure):
-            return dcc.Graph(figure=figure)
+            return dcc.Loading(
+                id="distribution_graph_loader",
+                type="default",
+                children=[dcc.Graph(figure=figure)],
+                style={'width': '100%', 'height': '100%'}  # Ensure the loader covers only the graph size
+            )
+
         
         return html.Div(
                 "Please select a  type and click 'Plot Distribution' to view plot'.",
@@ -105,22 +112,146 @@ def register_callbacks(app, variants_data):
 
     
     @app.callback(
-        Output("custom_distribution_graph_container", "children"),
-        [Input('plot_custom_distribution', 'n_clicks')],
-        [State('custom_distribution_type', 'value'), State('variant_selector', 'value')]
+        Output("custom_analysis_graph_container", "children"),
+        [Input('plot_custom_analysis', 'n_clicks')],
+        [State('custom_analysis_type', 'value'), State('variant_selector', 'value')]
     )
-    def custom_distributions_callback(n_clicks, custom_distribution_type, variant):
+    def custom_analysis_callback(n_clicks, custom_distribution_type, variant):
         if n_clicks == 0:
             raise PreventUpdate
 
-        result = tab_manager.custom_distributions(custom_distribution_type, variant)
+        analysis = tab_manager.perform_custom_analysis(custom_distribution_type, variant)
+        # Check if a valid figure was returned
+        if isinstance(analysis, go.Figure):
+            return dcc.Graph(figure=analysis)
 
-        if result is None:
+        if analysis is None:
             return html.Div(
                 "Please select a  type and click 'Plot Custom Distribution' to view data'.",
                 className='prompt-message'
             )
 
-        return result
+        return analysis
 
-    
+
+    # @app.callback(
+    #     [
+    #         Output("correlation_matrix_container", "children"),
+    #         Output("correlation_scatter_container", "children")
+    #     ],
+    #     [
+    #         Input('calculate_correlation', 'n_clicks'),
+    #         Input('correlation_matrix_graph', 'clickData')
+    #     ],
+    #     [
+    #         State('correlation_coefficient', 'value'),
+    #         # State('x_axis_column', 'value'),
+    #         # State('y_axis_column', 'value'),
+    #         State('variant_selector', 'value')
+    #     ]
+    # )
+    # def plot_correlation(n_clicks, clickData, correlation_method, variant):
+    #     print("I am click", clickData)
+    #     if clickData is not None:
+
+    #         x_column = clickData['points'][0]['x']
+    #         y_column = clickData['points'][0]['y']
+    #         _, scatter_fig = tab_manager.calculate_correlation(
+    #             variant=variant,
+    #             correlation_method=correlation_method,
+    #             x_column=x_column,
+    #             y_column=y_column
+    #         )
+        
+    #     if n_clicks == 0:
+    #         raise PreventUpdate
+
+    #     # Generate the correlation figures using the TabManager's method
+    #     correlation_fig, scatter_fig = tab_manager.calculate_correlation(
+    #         variant=variant,
+    #         correlation_method=correlation_method,
+    #     )
+
+    #     # Check if valid figures were returned
+    #     if correlation_fig is not None and scatter_fig is not None:
+    #         # Inside the callback where you generate the correlation figures
+    #         correlation_matrix_graph = dcc.Graph(
+    #             id="correlation_matrix_graph",  # Assign a unique ID to the Graph component
+    #             figure=correlation_fig
+    #         )
+    #         correlation_scatter_graph = dcc.Graph(
+    #             id="correlation_scatter_graph",  # Assign a unique ID to the Graph component (optional for clarity)
+    #             figure=scatter_fig
+    #         )
+
+
+    #         return (correlation_matrix_graph, correlation_scatter_graph)
+                
+    #     return (
+    #         html.Div(
+    #             "Please select valid options and click 'Plot Correlation' to view the plots.",
+    #             className='prompt-message'
+    #         ),
+    #         html.Div(
+    #             "Please select valid options and click 'Plot Correlation' to view the plots.",
+    #             className='prompt-message'
+    #         )
+    #     )
+
+        
+
+    @app.callback(
+        [
+            Output("correlation_matrix_graph", "figure"),
+            Output("correlation_scatter_graph", "figure"),
+            Output("correlation_matrix_graph", "style"),
+            Output("correlation_scatter_graph", "style")
+        ],
+        [
+            Input('calculate_correlation', 'n_clicks'),
+            Input('correlation_matrix_graph', 'clickData')  # Reference the Graph ID
+        ],
+        [
+            State('correlation_coefficient', 'value'),
+            State('variant_selector', 'value')
+        ]
+    )
+    def plot_correlation(n_clicks, clickData, correlation_method, variant):
+        # Default to no update
+        correlation_fig = no_update
+        scatter_fig = no_update
+        correlation_graph_style = {'width': '49%', 'display': 'none'}
+        scatter_graph_style = {'width': '49%', 'display': 'none'}
+
+        # Check if button click is valid
+        if n_clicks is not None and n_clicks > 0:
+            # Calculate the initial correlation and scatter plot figures
+            correlation_fig, scatter_fig = tab_manager.calculate_correlation(
+                variant=variant,
+                correlation_method=correlation_method,
+            )
+            # Set styles to display the graphs
+            correlation_graph_style = {'width': '49%', 'display': 'inline-block'}
+            scatter_graph_style = {'width': '49%', 'display': 'inline-block'}
+
+        # Check if a matrix cell was clicked
+        if clickData is not None:
+            x_column = clickData['points'][0]['x']
+            y_column = clickData['points'][0]['y']
+            # Update only the scatter plot based on the clicked cell
+            correlation_fig, scatter_fig = tab_manager.calculate_correlation(
+                variant=variant,
+                correlation_method=correlation_method,
+                x_column=x_column,
+                y_column=y_column
+            )
+            # Ensure styles remain set to display the graphs
+            correlation_graph_style = {'width': '49%', 'display': 'inline-block'}
+            scatter_graph_style = {'width': '49%', 'display': 'inline-block'}
+
+        # Return figures and styles
+        return correlation_fig, scatter_fig, correlation_graph_style, scatter_graph_style
+
+
+
+        

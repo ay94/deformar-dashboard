@@ -82,6 +82,45 @@ class DashboardConfigManager:
     @property
     def dataset_tab(self) -> Dict:
         return self.config.get("dashboard", {}).get("dataset_tab", {})
+    
+    @property
+    def decision_tab(self) -> Dict:
+        return self.config.get("dashboard", {}).get("decision_tab", {})
 
 
+@dataclass
+class ViolinConfig:
+    title: str
+    xaxis_title: str = ""
+    yaxis_title: str = ""
+    template: str = "plotly_white"
+    line_color: str = "#000000"
+    autosize: bool = True
+    margin: dict = field(default_factory=lambda: dict(l=10, r=10, t=30, b=30))
+    font_color: str = "#000000"
+    plot_bgcolor: str = "rgba(0, 0, 0, 0)"
+    paper_bgcolor: str = "rgba(0, 0, 0, 0)"
+    box_line_color: str = "#000000"
+    meanline_color: str = "#000000"
+    marker_color: str = "#000000"
+    
+    
+
+from dataclasses import dataclass, field
+
+@dataclass
+class BarConfig:
+    title: str
+    xaxis_title: str = ""
+    yaxis_title: str = "Frequency"
+    template: str = "plotly_white"
+    line_color: str = "#000000"
+    autosize: bool = True
+    margin: dict = field(default_factory=lambda: dict(l=10, r=10, t=30, b=30))
+    font_color: str = "#000000"
+    plot_bgcolor: str = "rgba(0, 0, 0, 0)"
+    paper_bgcolor: str = "rgba(0, 0, 0, 0)"
+    nbins: int = 30
+    kde_line_color: str = "#FF7F7F"
+    kde: bool = False
 
