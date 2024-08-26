@@ -200,3 +200,80 @@
 	font-size: 24px;
 	z-index: 1000;
 }
+
+/* .decision-clusters {
+	display: flex;
+	flex-direction: row;
+	height: 90vh;
+	width: 100%;
+}
+
+.heatmap-container {
+	display: inline-block;
+	width: 30%;
+	height: 100%;
+}
+
+.scatter-plots-container {
+	display: inline-block;
+	width: 70%;
+	height: 100%;
+}
+
+.scatter-plot {
+	flex-grow: 1;
+	width: 100%;
+	height: 100%;
+}
+
+.graph-full {
+	width: 100%;
+	height: 100%;
+	display: block;
+} */
+
+/* Overall container for the decision clusters */
+.decision-clusters {
+	display: flex;
+	flex-direction: column;
+	/* Change to column for stacking rows */
+	height: 90vh;
+	width: 100%;
+}
+
+/* Container for the top row elements */
+.top-row-container {
+	display: flex;
+	flex-direction: row;
+	width: 100%;
+	height: 50%;
+	/* Adjust based on your needs */
+}
+
+/* Left container for the heatmap */
+.heatmap-container {
+	flex: 1;
+	/* Changed from fixed width to flex */
+	height: 100%;
+}
+
+/* Right container for the first scatter plot */
+.scatter-plot {
+	flex: 2;
+	/* Changed from fixed width to flex */
+	height: 100%;
+}
+
+/* Full-width scatter plot container */
+.full-width-scatter {
+	width: 100%;
+	height: 50%;
+	/* Adjust based on your needs */
+}
+
+/* Graph styling, ensuring they take full container size */
+.graph-full {
+	width: 100%;
+	height: 100%;
+	display: block;
+}
