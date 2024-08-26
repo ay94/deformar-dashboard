@@ -12,8 +12,11 @@ import plotly.graph_objects as go
 @dataclass
 class DashboardData:
     analysis_data: pd.DataFrame = field(default_factory=pd.DataFrame)
+    training_data: pd.DataFrame = field(default_factory=pd.DataFrame)
     kmeans_results: pd.DataFrame = field(default_factory=pd.DataFrame)
     results: pd.DataFrame = field(default_factory=pd.DataFrame)
+    entity_report: pd.DataFrame = field(default_factory=pd.DataFrame)
+    token_report: pd.DataFrame = field(default_factory=pd.DataFrame)
     entity_confusion_data: pd.DataFrame = field(default_factory=pd.DataFrame)
     centroids_avg_similarity_matrix: pd.DataFrame = field(default_factory=pd.DataFrame)
     attention_weights_similarity: go.Figure = field(default_factory=go.Figure)
@@ -30,8 +33,8 @@ class DashboardData:
             self.analysis_data['Word Pieces'] = self.analysis_data['Word Pieces'].apply(
                 lambda x: ', '.join(x) if isinstance(x, list) else x
             )
-        self.analysis_data['Normalized Token Entropy'] = DashboardData.normalized_entropy(self.analysis_data, 'Local Token Entropy', 'Token Max Entropy', 'Normalized Token Entropy')  # filling 0/0 division as it generates Nan
-        self.analysis_data['Normalized Word Entropy'] = DashboardData.normalized_entropy(self.analysis_data, 'Local Token Entropy', 'Token Max Entropy', 'Normalized Token Entropy')  # filling 0/0 division as it generates Nan
+        self.analysis_data['Normalized Token Entropy'] = DashboardData.normalized_entropy(self.analysis_data, 'Local Token Entropy', 'Token Max Entropy')  # filling 0/0 division as it generates Nan
+        self.analysis_data['Normalized Word Entropy'] = DashboardData.normalized_entropy(self.analysis_data, 'Local Token Entropy', 'Token Max Entropy')  # filling 0/0 division as it generates Nan
     @staticmethod
     def round_floats(df):
         for col in df.select_dtypes(include=['float']).columns:
@@ -50,7 +53,7 @@ class DashboardData:
     def from_dict(dict_data: Dict[str, Any]):
         return DashboardData(**dict_data)
     @staticmethod
-    def normalized_entropy(df, col1, col2, new_col_name):
+    def normalized_entropy(df, col1, col2):
         return np.where(
             (df[col1] == 0) & (df[col2] == 0),  # Condition for both columns being 0
             0,  # Value if condition is true
