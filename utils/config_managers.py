@@ -106,8 +106,6 @@ class ViolinConfig:
     
     
 
-from dataclasses import dataclass, field
-
 @dataclass
 class BarConfig:
     title: str
@@ -123,4 +121,65 @@ class BarConfig:
     nbins: int = 30
     kde_line_color: str = "#FF7F7F"
     kde: bool = False
+
+
+
+@dataclass
+class ScatterConfig:
+    title: str
+    xaxis_title: str = ""
+    yaxis_title: str = ""
+    template: str = "plotly_white"
+    line_color: str = "#000000"
+    marker_color: str = "#000000"
+    marker_size: int = 10
+    line_width: int = 2
+    autosize: bool = True
+    margin: dict = field(default_factory=lambda: dict(l=10, r=10, t=30, b=30))
+    font_color: str = "#000000"
+    hover_data: list = field(default_factory=list)
+    color_discrete_map: dict = field(default_factory=dict)
+
+
+@dataclass
+class MatrixConfig:
+    title: str
+    color_continuous_scale: str = 'RdBu_r'
+    template: str = "plotly_white"
+    autosize: bool = True
+    width: int = 700
+    height: int = 700
+    margin: dict = field(default_factory=lambda: dict(l=10, r=10, t=30, b=30))
+    font_color: str = "#000000"
+    xaxis: dict = field(default_factory=lambda: dict(showgrid=False, zeroline=False))
+    yaxis: dict = field(default_factory=lambda: dict(showgrid=False, zeroline=False))
+    
+
+@dataclass
+class ScatterWidthConfig:
+    title: str
+    xaxis_title: str = ""
+    yaxis_title: str = ""
+    template: str = "plotly_white"
+    line_color: str = "#000000"
+    marker_color: str = "#000000"
+    marker_size: int = 10
+    line_width: int = 2
+    autosize: bool = True
+    margin: dict = field(default_factory=lambda: dict(l=10, r=10, t=30, b=30))
+    font_color: str = "#000000"
+    hover_data: list = field(default_factory=list)
+    color_discrete_map: dict = field(default_factory=dict)
+    width: int = 700  # Specific to this plot
+    height: int = 700  # Specific to this plot
+
+
+
+
+@dataclass
+class DecisionScatterConfig(ScatterConfig):
+    # New fields
+    marker_size: int = 3
+    autosize: bool = True
+    margin: dict = field(default_factory=lambda: dict(l=3, r=3, t=20, b=20))
 

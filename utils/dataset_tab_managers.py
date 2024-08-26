@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from dash import html
 from scipy.stats import gaussian_kde
 import numpy as np
-from utils.plotting_managers import (
+from utils.dataset_plotting_managers import (
                                 DistributionAnalysis,
                                 TokenVariabilityAnalysis,
                                 TagAmbiguityAnalysis,

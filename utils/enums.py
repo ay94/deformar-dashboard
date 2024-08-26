@@ -18,7 +18,9 @@ class CorrelationCoefficients(Enum):
     PEARSON = 'Pearson'
     SPEARMAN = 'Spearman' 
    
-
+class DecisionType(Enum):
+    PRETRAINED = 'Pre-trained Model'
+    FINETUNED = 'Fine Tuned Model' 
 
 # Define Enums for column names
 class TokenVariabilityColumns(Enum):
