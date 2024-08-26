@@ -1,4 +1,4 @@
-from dash import Dash, dcc, html, Output, Input
+from dash import Dash, dcc, html, Output, Input, State
 from layouts import load_layout, dataset_layout, decision_layout, performance_layout, instance_layout
 from callbacks import (
     load_callback,
@@ -6,8 +6,6 @@ from callbacks import (
     decision_callback
 )
 from utils.data_managers import DataManager
-
-
     
 def start_app(config_manager):
     app = Dash(__name__, suppress_callback_exceptions=True)  # Allow dynamic components
@@ -27,36 +25,62 @@ def start_app(config_manager):
 
     app.layout = html.Div(
                     children=[
+                        
                     dcc.Tabs(id="Tabs", value='load', children=tabs),
                     html.Div(id='tab-content'),  # Placeholder for dynamic content
+                    dcc.Store(id='tab-store', storage_type='local'),  # Initialize with default tab
                     dcc.Interval(id='data-loading-check', interval=1000, n_intervals=0),  # Check every 1 second
 
                     ]
                 )
     
+        
     @app.callback(
         Output('tab-content', 'children'),
         [
             Input('Tabs', 'value'),
-        ],
+            Input('tab-store', 'data')
+        ]
     )
-    def render_tab_content(tab, ):
-        # Decide what content to load based on the selected tab
+    def render_tab_content(tab, stored_tab):
+        print(stored_tab)
+        if stored_tab:
+            tab = stored_tab.get('selected_tab')
+        # Logic to return the layout based on the tab
         if tab == 'load':
-            load_tab = load_layout.get_layout(config_manager)
-            return load_tab
-        elif tab == 'dataset':            
-            dataset_tab = dataset_layout.get_layout(config_manager)
-            return dataset_tab
+            return load_layout.get_layout(config_manager)
+        elif tab == 'dataset':
+            return dataset_layout.get_layout(config_manager)
         elif tab == 'decision':
             return decision_layout.get_layout(config_manager)
         elif tab == 'performance':
-            
             return performance_layout.get_layout()
         elif tab == 'instance':
-            
             return instance_layout.get_layout()
-        return html.Div()  # Return an empty div if no tabs match
+        else:
+            return html.Div()  # Return an empty div if no tabs match
+
+   
+    @app.callback(
+        Output('tab-store', 'data'),
+        [Input('Tabs', 'value')],
+        prevent_initial_call=True
+    )
+    def update_store(selected_tab):
+        return {'selected_tab': selected_tab}
+    
+    # Restore tab from store, only trigger when the page is reloaded/visited
+    # @app.callback(
+    #     Output('Tabs', 'value'),
+    #     [Input('tab-store', 'data')],
+    #     [State('Tabs', 'value')]
+    # )
+    # def restore_tab(stored_data, current_tab):
+    #     if stored_data and (current_tab == 'load'):
+    #         return stored_data['selected_tab']
+    #     raise PreventUpdate
+
+
     
     # Create separate Output for each tab to enable them individually
     @app.callback(
