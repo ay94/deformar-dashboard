@@ -108,7 +108,7 @@ class CustomButton:
 #         )
 
 
-from dash import dash_table
+
 
 class CustomDataTable:
     def __init__(self, table_id, data=None, columns=None, style_header=None, page_size=10, **kwargs):
@@ -298,7 +298,7 @@ class VariantSection:
     def __init__(self, variants):
         self.variants_dropdown = dcc.Dropdown(
             id='variant_selector',
-            placeholder="Select column...",
+            placeholder="Select variant...",
             options=generate_dropdown_options(variants),
             value=variants[0],
             style={'width': '50%', 'margin': 'auto'}
