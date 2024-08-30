@@ -144,6 +144,9 @@ class ScatterConfig:
 @dataclass
 class MatrixConfig:
     title: str
+    x: str
+    y: str
+    color: str
     color_continuous_scale: str = 'RdBu_r'
     template: str = "plotly_white"
     autosize: bool = True
@@ -153,7 +156,7 @@ class MatrixConfig:
     font_color: str = "#000000"
     xaxis: dict = field(default_factory=lambda: dict(showgrid=False, zeroline=False))
     yaxis: dict = field(default_factory=lambda: dict(showgrid=False, zeroline=False))
-    
+
 
 @dataclass
 class ScatterWidthConfig:
@@ -173,13 +176,78 @@ class ScatterWidthConfig:
     width: int = 700  # Specific to this plot
     height: int = 700  # Specific to this plot
 
-
+   # size=10,
+# opacity=0.8
+        # size=5,
+# opacity=0.9
 
 
 @dataclass
 class DecisionScatterConfig(ScatterConfig):
     # New fields
-    marker_size: int = 3
+    marker_size: float = 5
+    marker_opacity: int = 1.0
+    line_width: float = 0.7
+    line_color: str = 'rgba(47, 79, 79, 1.0)'
     autosize: bool = True
-    margin: dict = field(default_factory=lambda: dict(l=3, r=3, t=20, b=20))
+    selected_marker_size: int = 10
+    selected_opacity: float = 0.75
+    unselected_marker_size: int = 5
+    unselected_opacity: float = 0.9
+    width: int = None
+    height: int = None
+    xaxis_visible: bool = False
+    yaxis_visible: bool = False 
+    xaxis_showgrid: bool = False
+    yaxis_showgrid:bool  = False
+    
+
+
+@dataclass
+class ColorMap:
+    # Define a dictionary to hold color mappings
+    color_map: Dict[str, str] = field(default_factory=lambda: {
+        'B-LOC': 'darkgreen',
+        'B-PERS': 'deepskyblue',
+        'B-ORG': 'darkcyan',
+        'B-MISC': 'palevioletred',
+        'I-LOC': 'yellowgreen',
+        'I-PERS': 'lightblue',
+        'I-ORG': 'cyan',
+        'I-MISC': 'violet',
+        'O': 'saddlebrown',
+        'LOC': 'darkgreen',
+        'PERS': 'deepskyblue',
+        'ORG': 'darkcyan',
+        'MISC': 'palevioletred',
+        'NOUN': 'darkgreen',
+        'VERB': 'deepskyblue',
+        'PN': 'darkcyan',
+        'PRT': 'yellowgreen',
+        'ADJ': 'lightblue',
+        'ADV': 'cyan',
+        'PRON': 'saddlebrown',
+        'DSIL': 'violet',
+        'CCONJ': 'turquoise',
+        'ADP': 'darksalmon',
+        'PUNCT': 'tomato',
+        'DET': 'midnightblue',
+        'X': 'olive',
+        'AUX': 'limegreen',
+        'NUM': 'slateblue',
+        'PART': 'wheat',
+        'SYM': 'firebrick',
+        'PROPN': 'gold',
+        'INTJ': 'lightseagreen',
+        'IGNORED': 'grey',
+        '[CLS]': 'grey',  # Explicitly handle CLS
+        '[SEP]': 'grey',  # Explicitly handle SEP
+        'SELECTED': 'black'
+    })
+
+    def get_color(self, key: str) -> str:
+        """Return the color for a given key, defaulting to 'grey' if not found."""
+        return self.color_map.get(key, 'grey')
+    
+ 
 
