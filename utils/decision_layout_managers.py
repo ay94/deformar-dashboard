@@ -9,6 +9,8 @@ from utils.layout_managers import (
     VariantSection
 )
 import plotly.graph_objs as go
+import dash_bootstrap_components as dbc
+
 
 class DecisionSection:
     def __init__(self, config):
@@ -22,7 +24,7 @@ class DecisionSection:
         
         self.decision_columns_dropdown = dcc.Dropdown(
             id='decision_columns',
-            multi=False,
+            multi=True,
             placeholder="Select Color column...",
             options=generate_dropdown_options(config.get('decision_columns', ['Wrong Columns'])),  # Assuming you have a function to generate options
             style={'width': '100%'}  # Assuming you want to use the full width for styling
@@ -36,6 +38,8 @@ class DecisionSection:
         )
         
         self.plot_button = CustomButton('View Decision Boundary', 'view_decision_boundary').render()
+        self.clear_decision = CustomButton('Clear Decision', 'clear_decision').render()
+        self.clear_meeasure = CustomButton('Clear Measure', 'clear_measure').render()
         
     def render(self):
         return SectionContainer(
@@ -44,55 +48,11 @@ class DecisionSection:
                         self.decision_type_dropdown,
                         self.decision_columns_dropdown, 
                         self.decision_correlation_type_dropdown,
-                        self.plot_button  # Include the message
+                        self.plot_button,  # Include the message
+                        self.clear_decision, 
+                        self.clear_meeasure
                     ]
                 ).render()
-
-# html.Div([
-#         # Left container for the heatmap
-        
-#         dcc.Loading(
-#             id="loading_heatmap",
-#             type="default",
-#             children=[
-#                 dcc.Graph(
-#                     id="heatmap_graph",
-#                     figure=go.Figure(),  # Placeholder until data is loaded
-#                     style={'width': '49%', 'height': '100%'}
-#                 )
-#             ],
-#             style={'display': 'inline-block', 'width': '49%', 'height': '100%'}
-#         ),
-#         # Right container for scatter plots
-#         html.Div([
-#             dcc.Loading(
-#                 id="loading_scatter_top",
-#                 type="default",
-#                 children=[
-#                     dcc.Graph(
-#                         id="scatter_top_graph",
-#                         figure=go.Figure(),  # Placeholder until data is loaded
-#                     )
-#                 ],
-#                 style={'width': '100%', 'height': '50%'}  # Takes half of the right column
-#             ),
-#             dcc.Loading(
-#                 id="loading_scatter_bottom",
-#                 type="default",
-#                 children=[
-#                     dcc.Graph(
-#                         id="scatter_bottom_graph",
-#                         figure=go.Figure(),  # Placeholder until data is loaded
-#                     )
-#                 ],
-#                 style={'width': '100%', 'height': '50%'}  # Takes the remaining half of the right column
-#             )
-#         ], style={'display': 'inline-block', 'width': '49%', 'height': '100%', 'verticalAlign': 'top'})
-#     ], 
-#         className='graph-container'
-# )
-
-
 
 
 
@@ -107,206 +67,168 @@ class DecisionTabLayout:
         select_variant_container = VariantSection(self.variants).render()
         
         training_header = html.H3("Training Boundary", className='section-header')
+        view_train_decision = CustomButton('View Training Decision Boundary', 'view_training_decision_boundary').render()
         training_graph_container = LoadingContainer(
             container_id="training_graph",
             loader_id="training_graph_loader",
-            container_style={'width': '70%', 'height': '500px'}
+            container_style={'width': '70%', 'height': '100%'}
         ).render()
        
         
-        decision_container = DecisionSection(self.decision_tab_config).render()  # Create and render the distribution section
+        decision_section = DecisionSection(self.decision_tab_config).render()  # Create and render the distribution section
         
-        decision_graph = dcc.Loading(
-            id="loading_decision_graph",
-            type="default",
-            children=[
-                dcc.Graph(
-                    id="decision_boundary_graph",
-                    figure={},  # Empty figure as a placeholder
-                    style={'width': '100%', 'display': 'none'}
-                )
-            ],
-            style={'display': 'inline-block', 'width': '100%'}
-        )
+       
         decision_graph_prompt = html.Div(id='decision_graph_prompt')
-        # decision_clusters = html.Div(
-        #     children=[
-        #         # Left container for the heatmap
-        #         dcc.Loading(
-        #             id="loading_correlation_heatmap",
-        #             type="default",
-        #             children=[
-        #                 dcc.Graph(
-        #                     id="correlation_heatmap",
-        #                     figure={},  # Placeholder until data is loaded
-        #                     style={'height': '100%', 'width': '100%', 'display': 'none'}
-        #                 )
-        #             ],
-        #             style={'display': 'inline-block', 'width': '30%', 'height': '100%'}
-        #         ),
-        #         # Right container for scatter plots
-        #         html.Div(
-        #             children=[
-        #                 dcc.Loading(
-        #                     id="loading_decision_scatter",
-        #                     type="default",
-        #                     children=[
-        #                         dcc.Graph(
-        #                             id="decision_scatter",
-        #                             figure=go.Figure(),  # Placeholder until data is loaded
-        #                             style={'width': '100%', 'height': '100%'}
-        #                         )
-        #                     ],
-        #                     style={'width': '100%', 'height': '50%'}  # Takes half of the right column
-        #                 ),
-        #                 dcc.Loading(
-        #                     id="loading_measure_scatter",
-        #                     type="default",
-        #                     children=[
-        #                         dcc.Graph(
-        #                             id="measure_scatter",
-        #                             figure=go.Figure(),  # Placeholder until data is loaded
-        #                             style={'width': '100%', 'height': '100%'}
-        #                         )
-        #                     ],
-        #                     style={'width': '100%', 'height': '50%'}  # Takes the remaining half of the right column
-        #                 )
-        #             ], 
-        #             style={'display': 'inline-block', 'width': '70%', 'height': '100%'})
-        #     ], 
-        #     style={'display': 'flex', 'height': '90vh'} # Ensures the container takes full height
-        # )  
-#         decision_clusters = html.Div(
-#     children=[
-#         # Left container for the heatmap
-#         dcc.Loading(
-#             id="loading_correlation_heatmap",
-#             type="default",
-#             children=[
-#                 dcc.Graph(
-#                     id="correlation_heatmap",
-#                     figure={},  # Placeholder until data is loaded
-#                     className='graph-full'  # Using CSS for styling
-#                 )
-#             ],
-#             className='heatmap-container'
-#         ),
-#         # Right container for scatter plots
-#         html.Div(
-#             children=[
-#                 dcc.Loading(
-#                     id="loading_decision_scatter",
-#                     type="default",
-#                     children=[
-#                         dcc.Graph(
-#                             id="decision_scatter",
-#                             figure=go.Figure(),  # Placeholder until data is loaded
-#                             className='graph-full'
-#                         )
-#                     ],
-#                     className='scatter-plot'
-#                 ),
-#                 # dcc.Loading(
-#                 #     id="loading_measure_scatter",
-#                 #     type="default",
-#                 #     children=[
-#                 #         dcc.Graph(
-#                 #             id="measure_scatter",
-#                 #             figure=go.Figure(),  # Placeholder until data is loaded
-#                 #             className='graph-full'
-#                 #         )
-#                 #     ],
-#                 #     className='scatter-plot'
-#                 # )
-#             ], 
-#             className='scatter-plots-container'
-#         )
-#     ], 
-#     className='decision-clusters'  # Main container class
-# )
+       
         
-#         graph = dcc.Loading(
-#                     id="loading_correlation_scatter",
-#                     type="default",
-#                     children=[
-#                         dcc.Graph(
-#                             id="gdf",
-#                             figure=go.Figure(),  # Empty figure as a placeholder
-#                             style={'width': '100%'}
-#                         )
-#                     ],
-#                     style={'display': 'inline-block', 'width': '100%'}
-#                 )
-        decision_clusters = html.Div(
-            children=[
-                # First row with heatmap and first scatter plot
-                html.Div(
-                    children=[
-                        # Left container for the heatmap
-                        dcc.Loading(
-                            id="loading_correlation_heatmap",
-                            type="default",
-                            children=[
-                                dcc.Graph(
-                                    id="correlation_heatmap",
-                                    figure={},  # Placeholder until data is loaded
-                                    className='graph-full'
-                                )
-                            ],
-                            className='heatmap-container'
+        measure_container = dbc.Container(
+            [
+                dbc.Row(
+                    [
+                        dbc.Col(
+                            dcc.Loading(
+                                id="loading_heatmap_container",
+                                type="default",
+                                children=[
+                                    dcc.Graph(id="correlation_heatmap", figure={})
+                                ],
+                            ),
+                            width=5
                         ),
-                        # Right container for first scatter plot
-                        dcc.Loading(
-                            id="loading_decision_scatter",
-                            type="default",
-                            children=[
-                                dcc.Graph(
-                                    id="measure_scatter",
-                                    figure=go.Figure(),  # Placeholder until data is loaded
-                                    className='graph-full'
-                                )
-                            ],
-                            className='scatter-plot'
-                        )
+                        dbc.Col(
+                            dcc.Loading(
+                                id="loading_measure_container",
+                                type="default",
+                                children=[
+                                    dcc.Graph(id="measure_scatter", figure={}),
+                                    dcc.Store(id='measure_store'),
+                                ],
+                            ),
+                            width=7
+                        ),
                     ],
-                    className='top-row-container'  # New class for top row
+                    style={'margin-bottom': '70px'}
                 ),
-                # Second row with second scatter plot full width
-                dcc.Loading(
-                    id="loading_measure_scatter",
-                    type="default",
-                    children=[
-                        dcc.Graph(
-                            id="decision_scatter",
-                            figure=go.Figure(),  # Placeholder until data is loaded
-                            className='graph-full'
+                dbc.Row(
+                    [
+                        dbc.Col(
+                            dcc.Loading(
+                                id="loading_decision_container",
+                                type="default",
+                                children=[
+                                    dcc.Graph(id="decision_scatter", figure={}),
+                                    dcc.Store(id='decision_store'),
+                                ],
+                            ),
+                            width=12
                         )
                     ],
-                    className='full-width-scatter'  # New class for full width scatter
+                    style={'margin-top': '30px'}
+                )
+              
+            ],
+            fluid=True
+        )
+        
+ 
+        auxiliary_analysis = dbc.Container(
+            [
+                dbc.Row(
+                    [
+                        dbc.Col(
+                            dcc.Loading(
+                                id="loading_selection_tags",
+                                type="default",
+                                children=html.Div(
+                                    id="selection_tag_container",
+                                    style={'width': '100%', 'height': 'auto', 'overflow': 'visible'}  # Use dynamic height and ensure overflow is visible
+                                ),
+                            ),
+                            width=6,
+                            style={'padding': '5px'}
+                        ),
+                        dbc.Col(
+                            dcc.Loading(
+                                id="loading_clustering_table",
+                                type="default",
+                                children=html.Div(
+                                    id="centroid_matrix_container",
+                                    style={'width': '100%', 'height': 'auto', 'overflow': 'visible'}  # Use dynamic height and ensure overflow is visible
+                                ),
+                            ),
+                            width=6,
+                            style={'padding': '5px'}
+                        )
+                    ]
                 )
             ],
-            className='decision-clusters'
+            fluid=True
         )
+       
+        # Add a header between the two rows
+        impact_header = dbc.Container(
+            dbc.Row(
+                dbc.Col(
+                    html.H4("Training Impact Analysis", className='section-header'),
+                    width=12,
+                    style={'text-align': 'center', 'margin-top': '20px', 'margin-bottom': '20px'}
+                )
+            ),
+            fluid=True
+        )
+        training_impact = dbc.Container(
+            [
+                dbc.Row(
+                    [
+                        dbc.Col(
+                            dcc.Loading(
+                                id="loading_attention_similarity",
+                                type="default",
+                                children=html.Div(
+                                    id="attention_similarity_matrix_container",
+                                    style={'width': '100%', 'height': 'auto', 'overflow': 'visible'}  # Dynamic height and overflow settings
+                                ),
+                            ),
+                            width=6,
+                            style={'padding': '50px', 'margin-bottom': '10px'}  # Add bottom margin for spacing
+                        ),
+                        dbc.Col(
+                            dcc.Loading(
+                                id="loading_weight_similarity",
+                                type="default",
+                                children=html.Div(
+                                    id="attention_weight_similarity_container",
+                                    style={'width': '100%', 'height': 'auto', 'overflow': 'visible'}  # Dynamic height and overflow settings
+                                ),
+                            ),
+                            width=6,
+                            style={'padding': '100px', 'margin-bottom': '10px'}  # Add bottom margin for spacing
+                        )
+                    ]
+                )
+            ]
+        )
+        
 
         layout = html.Div(
-                    # className='main-container',
-                    className='main-container center-container',
-                    children=[
-                        select_variant_container,
-                        training_header,
-                        training_graph_container,
-                        decision_container,
-                        decision_graph,
-                        decision_graph_prompt,
-                        decision_clusters, 
-                        
-                    ],
-                    
-                    
-            )
-
+            className='main-container center-container',
+            style={
+                'display': 'flex',
+                'flex-direction': 'column',
+                'align-items': 'center',
+                'justify-content': 'flex-start'
+            },
+            children=[
+                select_variant_container,
+                training_header,
+                training_graph_container,
+                view_train_decision,
+                decision_section,
+                decision_graph_prompt,
+                measure_container,
+                auxiliary_analysis,
+                impact_header,
+                training_impact,
+            ]
+        )
         return layout
-
-
-
-

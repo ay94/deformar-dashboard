@@ -305,9 +305,6 @@ class DatasetTabLayout:
             container_style={
                 'width': '50%',  # Adjust width as needed
                 'height': '500px',  # Fixed height
-                # 'display': 'flex',  # Center content
-                # 'justify-content': 'center',  # Center horizontally
-                # 'align-items': 'center',  # Center vertically
                 'margin': 'auto',  # Center the container
                 'overflow': 'hidden'  # Hide any overflow outside the container
             },

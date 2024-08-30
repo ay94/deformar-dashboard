@@ -154,50 +154,86 @@ class CorrelationColumns(Enum):
         return [col.value for col in CorrelationColumns if col != CorrelationColumns.TRUE_LABELS]
 
 
-from enum import Enum
 
-class ColorMap(Enum):
-    B_LOC = 'darkgreen'
-    B_PERS = 'deepskyblue'
-    B_ORG = 'darkcyan'
-    B_MISC = 'palevioletred'
-    I_LOC = 'yellowgreen'
-    I_PERS = 'lightblue'
-    I_ORG = 'cyan'
-    I_MISC = 'violet'
-    O = 'saddlebrown'
-    LOC = 'darkgreen'
-    PERS = 'deepskyblue'
-    ORG = 'darkcyan'
-    MISC = 'palevioletred'
-    NOUN = 'darkgreen'
-    VERB = 'deepskyblue'
-    PN = 'darkcyan'
-    PRT = 'yellowgreen'
-    ADJ = 'lightblue'
-    ADV = 'cyan'
-    PRON = 'saddlebrown'
-    DSIL = 'violet'
-    CCONJ = 'turquoise'
-    ADP = 'darksalmon'
-    PUNCT = 'tomato'
-    DET = 'midnightblue'
-    X = 'olive'
-    AUX = 'limegreen'
-    NUM = 'slateblue'
-    PART = 'wheat'
-    SYM = 'firebrick'
-    PROPN = 'gold'
-    INTJ = 'lightseagreen'
-    IGNORED = 'grey'
-    CLS = 'grey'
-    SEP = 'grey'
-    SELECTED = 'black'
+# class ColorMap(Enum):
+#     B_LOC = 'darkgreen'
+#     B_PERS = 'deepskyblue'
+#     B_ORG = 'darkcyan'
+#     B_MISC = 'palevioletred'
+#     I_LOC = 'yellowgreen'
+#     I_PERS = 'lightblue'
+#     I_ORG = 'cyan'
+#     I_MISC = 'violet'
+#     O = 'saddlebrown'
+#     LOC = 'darkgreen'
+#     PERS = 'deepskyblue'
+#     ORG = 'darkcyan'
+#     MISC = 'palevioletred'
+#     NOUN = 'darkgreen'
+#     VERB = 'deepskyblue'
+#     PN = 'darkcyan'
+#     PRT = 'yellowgreen'
+#     ADJ = 'lightblue'
+#     ADV = 'cyan'
+#     PRON = 'saddlebrown'
+#     DSIL = 'violet'
+#     CCONJ = 'turquoise'
+#     ADP = 'darksalmon'
+#     PUNCT = 'tomato'
+#     DET = 'midnightblue'
+#     X = 'olive'
+#     AUX = 'limegreen'
+#     NUM = 'slateblue'
+#     PART = 'wheat'
+#     SYM = 'firebrick'
+#     PROPN = 'gold'
+#     INTJ = 'lightseagreen'
+#     IGNORED = 'grey'
+#     CLS = 'grey'
+#     SEP = 'grey'
+#     SELECTED = 'black'
 
-    @classmethod
-    def get_color_map(cls):
-        """Return the color map as a dictionary."""
-        return {item.name.replace("_", "-"): item.value for item in cls}
+#     @classmethod
+#     def get_color_map(cls):
+#         """Return the color map as a dictionary."""
+#         return {item.name.replace("_", "-"): item.value for item in cls}
+    
+class HoverColumns(Enum):
+    WORDS = 'Words'
+    CORE_TOKENS = 'Core Tokens'
+    TRUE_LABELS = 'True Labels'
+    TOKEN_SELECTOR_ID = 'Token Selector Id'
+    PRED_LABELS = 'Pred Labels'
+    AGREEMENTS = 'Agreements'
+    ERROR_TYPE = 'Error Type'
 
-# Example of accessing the color map
-custom_color_map = ColorMap.get_color_map()
+    @staticmethod
+    def list_columns():
+        """
+        Returns a list of all column names for use in selections or other operations,
+        excluding specific items if necessary.
+        """
+        # If you need to exclude specific items, you can do so with a condition
+        return [col.value for col in HoverColumns]
+
+
+class SelectionPlotColumns(Enum):
+    TRUE_LABELS = 'True Labels'
+    PRED_LABELS = 'Pred Labels'
+
+    
+
+class TrainColumns(Enum):
+    X_COLUMN = 'X'
+    Y_COLUMN = 'Y'
+    LOSSES = 'Losses'
+    GLOBAL_ID = 'Global Id'
+    TRUE_LABELS = 'True Labels'
+    @staticmethod
+    def list_columns():
+        """
+        Returns a list of all column names for use in selections or other operations,
+        excluding specific items if necessary.
+        """
+        # If you need to exclude specific items, you can do so with a condition
+        return [col.value for col in TrainColumns]

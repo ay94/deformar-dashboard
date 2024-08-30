@@ -39,13 +39,17 @@ class LoadTabLayout:
                     children=[
                         html.Div(id='load_message', style={'margin-top': '20px', 'color': '#28a745', 'textAlign': 'center'}),
                         html.Div(id='cache_status', style={'margin-top': '20px', 'color': '#28a745'}),
-                        html.Div(id='data_status_table', style={'padding': '20px'})
+                        html.Div(id='data_status_table', style={
+                            'width': '60%',  
+                            'height': '500px',
+                            'margin': 'auto',
+                            'overflowX': 'auto',
+                            'overflowY': 'auto'
+                            }
+                        )
                     ],
                     fullscreen=False,
                 ),
             ])
         ])
         return layout
-
-
-

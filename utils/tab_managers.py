@@ -1,10 +1,11 @@
 
+import logging
 import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
 from scipy.stats import gaussian_kde
 from utils.layout_managers import CustomDataTable
-from utils.config_managers import ViolinConfig, BarConfig, ScatterConfig, MatrixConfig, ScatterWidthConfig
+from utils.config_managers import ViolinConfig, BarConfig, ScatterConfig, MatrixConfig
 class BaseTabManager:
     def __init__(self, data):
         self.data = data
@@ -123,67 +124,61 @@ def create_scatter_plot(data, x_column, y_column, config: ScatterConfig):
 
 
 
-def create_scatter_plot_with_color(data, x_column, y_column, color_column, config: ScatterConfig):
+def create_scatter_plot_with_color(data, x_column, y_column, color_column, symbol_column, config: ScatterConfig):
     fig = px.scatter(
         data,
         x=x_column,
         y=y_column,
         color=color_column,
+        symbol=symbol_column,
         title=config.title,
         template=config.template,
         hover_data=config.hover_data,
+        custom_data = ['Global Id'],
         color_discrete_map=config.color_discrete_map
     )
 
-    # Update plot appearance to match the style of other plots
-    # fig.update_traces(
-    #     line=dict(color=config.line_color, width=config.line_width),
-    #     marker=dict(
-    #         size=config.marker_size,
-    #         line=dict(width=1.5, color=config.line_color)
-    #     )
-    # )
-#     fig.update_traces(
-#     marker=dict(
-#         size=config.marker_size,
-#         line=dict(width=0)  # Set width to 0 to remove the border
-#     )
-# )
-
     fig.update_traces(
         marker=dict(
-            size=5,
+            size=config.marker_size,
+            opacity=config.marker_opacity,
             line=dict(
-                width=0.5,
-                # color='DarkSlateGrey'
-                color='rgba(47, 79, 79, 1.0)'
-
-            )
+                width=config.line_width,
+                color=config.line_color,
+            ),
         ),
-        selected=dict(marker=dict(size=10, opacity=0.9)),  # Selected state
-        unselected=dict(marker=dict(opacity=0.5))  # Unselected state
-        # selector=dict(mode='markers')
+        selected=dict(
+            marker=dict(
+                size=config.selected_marker_size,
+                opacity=config.selected_opacity
+                
+            )
+        ),  # Selected state
+        unselected=dict(
+            marker=
+            dict(
+                size=config.unselected_marker_size,
+                opacity=config.unselected_opacity
+            )
+        )  # Unselected state
     )
     fig.update_layout(
         xaxis_title=config.xaxis_title or x_column,
         yaxis_title=config.yaxis_title or y_column,
         autosize=config.autosize,
-        height=500,
-        xaxis_visible=False,  # Hide the x axis
-        yaxis_visible=False,  # Hide the y axis
-        xaxis_showgrid=False,  # Hide x-axis grid lines
-        yaxis_showgrid=False,  # Hide y-axis grid lines
-        # margin=config.margin,
-        # margin=dict(l=3, r=3, t=20, b=20),
-        # font=dict(color=config.font_color)
+        height=config.height,
+        xaxis_visible=config.xaxis_visible,  # Hide the x axis
+        yaxis_visible=config.yaxis_visible,  # Hide the y axis
+        xaxis_showgrid=config.xaxis_showgrid,  # Hide x-axis grid lines
+        yaxis_showgrid=config.yaxis_showgrid,  # Hide y-axis grid lines
+       
     )
-
     return fig
 
-def create_matrix_plot(correlation_matrix, config: MatrixConfig):
+def create_correlation_matrix_plot(correlation_matrix, config: MatrixConfig):
     fig = px.imshow(
         correlation_matrix,
-        labels=dict(x="Variables", y="Variables", color="Correlation"),
+        labels=dict(x=config.x, y=config.y, color=config.color),
         title=config.title,
         color_continuous_scale=config.color_continuous_scale
     )
@@ -199,9 +194,31 @@ def create_matrix_plot(correlation_matrix, config: MatrixConfig):
         xaxis=config.xaxis,
         yaxis=config.yaxis
     )
-
     return fig
 
+def create_similarity_matrix_plot(similarity_matrix, config: MatrixConfig):
+    fig = px.imshow(
+        similarity_matrix,
+        labels=dict(x=config.x, y=config.y, color=config.color),
+        title=config.title,
+        color_continuous_scale=config.color_continuous_scale,
+        x=similarity_matrix.columns,
+        y=similarity_matrix.index,
+        aspect="auto"  # auto adjusts to aspect ratio
+    )
+
+    # Update plot layout to match configuration
+    fig.update_layout(
+        template=config.template,
+        autosize=config.autosize,
+        margin=config.margin,
+        font=dict(color=config.font_color),
+        width=config.width,
+        height=config.height,
+        xaxis=config.xaxis,
+        yaxis=config.yaxis
+    )
+    return fig
 def create_scatter_width_plot(data, x_column, y_column, config: ScatterConfig):
     fig = px.scatter(
         data,
@@ -231,6 +248,31 @@ def create_scatter_width_plot(data, x_column, y_column, config: ScatterConfig):
     )
 
     return fig
+
+
+def create_bar_chart(data, title, xaxis_title, yaxis_title, width, height, color_column=None, color_map=None):
+    """
+    Create a bar chart using Plotly with the specified color and formatting.
+    """
+    # Create the bar chart with optional color mapping
+    if color_column and color_map:
+        fig = px.bar(data,  color_discrete_map=color_map, orientation='h', title=title)
+    else:
+        fig = px.bar(data, orientation='h', title=title, template='plotly_white')
+    
+    # Update the layout to match the desired formatting
+    fig.update_layout(
+        xaxis_title=xaxis_title,
+        yaxis_title=yaxis_title,
+        template='plotly_white',
+        width=width,  # Slightly larger width for better visibility
+        height=height
+    )
+    # Update the traces to set bar colors and borders
+    fig.update_traces(marker=dict(line=dict(width=1.5, color="#FF7F7F")))
+
+    return fig
+
 
 
 

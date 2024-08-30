@@ -16,12 +16,12 @@ from utils.enums import (
     TagAmbiguityColumns,
     CustomAnalysisConfig,
     ErrorRateColumns,
-    CorrelationColumns,
-    ColorMap
+    CorrelationColumns
+    # ColorMap
     )
 
-from utils.config_managers import ViolinConfig, BarConfig, ScatterConfig, MatrixConfig, ScatterWidthConfig
-from utils.tab_managers import BasePlotting, create_violin_plot, create_histogram_plot, create_scatter_plot, create_matrix_plot, create_scatter_width_plot
+from utils.config_managers import ViolinConfig, BarConfig, ScatterConfig, MatrixConfig, ScatterWidthConfig, ColorMap
+from utils.tab_managers import BasePlotting, create_violin_plot, create_histogram_plot, create_scatter_plot, create_correlation_matrix_plot, create_scatter_width_plot
 class BaseAnalysis:
     def handle_errors(func):
         """Decorator for handling errors in analysis functions."""
@@ -334,9 +334,11 @@ class CorrelationAnalysis(BaseAnalysis):
             
             # Set the values in the upper triangle to NaN
             correlation_matrix = correlation_matrix.mask(mask)
-                    
             config = MatrixConfig(
                 title=f'{correlation_method.capitalize()} Correlation Matrix of Aggregated Data',
+                x='Variables',
+                y='Variables',
+                color='Correlation',
                 color_continuous_scale='RdBu_r',
                 font_color="#000000",
                 width=700,  # Slightly larger width for better visibility
@@ -344,8 +346,8 @@ class CorrelationAnalysis(BaseAnalysis):
             )
 
             # Generate the plot
-            matrix_fig = create_matrix_plot(correlation_matrix, config)
-
+            matrix_fig = create_correlation_matrix_plot(correlation_matrix, config)
+            color_map = ColorMap()
             scatter_config = ScatterWidthConfig(
                 title=f'Scatter Plot of {x_column} vs {y_column} by Label',
                 xaxis_title=x_column,
@@ -354,7 +356,7 @@ class CorrelationAnalysis(BaseAnalysis):
                 marker_color=true_labels_col,
                 width=700,
                 height=700,
-                color_discrete_map=ColorMap.get_color_map()
+                color_discrete_map=color_map.color_map
             )
 
             scatter_fig = create_scatter_width_plot(aggregated_df, x_column, y_column, scatter_config)

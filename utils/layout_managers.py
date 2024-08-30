@@ -2,11 +2,40 @@ from dash import html, dcc
 from dash import html, dash_table
 import plotly.graph_objs as go
 
-
-
+import json
+import pandas as pd
+import numpy as np
+from io import StringIO
 
 def get_input_trigger(ctx):
     return ctx.triggered[0]["prop_id"].split(".")[0]
+
+def process_json_data(jsonData):
+    if not jsonData:  
+        return pd.DataFrame()  
+    if isinstance(jsonData, str):
+        data = json.loads(jsonData)
+    else:
+        data = jsonData
+    if isinstance(data, list):
+        df = pd.DataFrame(data)
+    elif isinstance(data, dict):
+        df = pd.read_json(StringIO(json.dumps(data)), orient='split')
+    else:
+        return []
+    return df
+
+def process_selection(decisionSelection):
+    selection_ids = []
+    if decisionSelection:
+        if isinstance(decisionSelection, str) and decisionSelection.strip():
+            decision_selection = process_json_data(decisionSelection)
+            if not decision_selection.empty:
+                selection_ids = decision_selection['Global Id'].tolist()
+        else:
+            decision_selection = pd.DataFrame()
+    return selection_ids
+
 
 def generate_dropdown_options(columns):
     # This could pull column names from a dataset configuration or similar
