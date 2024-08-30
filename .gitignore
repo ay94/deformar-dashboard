@@ -8,3 +8,6 @@ pyvenv.cfg
 share/
 *.pyc
 __pycache__/
+cache-directory/
+
+~/deformer-dashboard/cache-directory/
