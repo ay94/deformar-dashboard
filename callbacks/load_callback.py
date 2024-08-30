@@ -1,9 +1,10 @@
 import time
+
 from dash import callback_context, html, no_update
 from dash.dependencies import Input, Output, State
 
-from utils.layout_managers import generate_status_table
-from utils.plotUtils import get_input_trigger
+from layouts.managers.layout_managers import (generate_status_table,
+                                              get_input_trigger)
 
 
 def register_callbacks(app, data_manager):
@@ -47,7 +48,11 @@ def register_callbacks(app, data_manager):
                     data_manager.load_data()
                     message = f"Data for all variants loaded successfully in {time.time() - start_time:.2f} seconds!"
 
-                return generate_status_table(data_manager.variants_data), html.Span(message), ""
+                return (
+                    generate_status_table(data_manager.variants_data),
+                    html.Span(message),
+                    "",
+                )
 
             except Exception as e:
                 return no_update, f"Failed to load data: {str(e)}", ""
