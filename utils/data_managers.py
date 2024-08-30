@@ -12,15 +12,17 @@ import plotly.graph_objects as go
 @dataclass
 class DashboardData:
     analysis_data: pd.DataFrame = field(default_factory=pd.DataFrame)
-    training_data: pd.DataFrame = field(default_factory=pd.DataFrame)
+    train_data: pd.DataFrame = field(default_factory=pd.DataFrame)
     kmeans_results: pd.DataFrame = field(default_factory=pd.DataFrame)
     results: pd.DataFrame = field(default_factory=pd.DataFrame)
     entity_report: pd.DataFrame = field(default_factory=pd.DataFrame)
     token_report: pd.DataFrame = field(default_factory=pd.DataFrame)
     entity_confusion_data: pd.DataFrame = field(default_factory=pd.DataFrame)
     centroids_avg_similarity_matrix: pd.DataFrame = field(default_factory=pd.DataFrame)
-    attention_weights_similarity: go.Figure = field(default_factory=go.Figure)
-    attention_similarity_matrix: go.Figure = field(default_factory=go.Figure)
+    attention_weights_similarity_heatmap: go.Figure = field(default_factory=go.Figure)
+    attention_weights_similarity_matrix: np.ndarray = field(default_factory=lambda: np.array([]))
+    attention_similarity_heatmap: go.Figure = field(default_factory=go.Figure)
+    attention_similarity_matrix: np.ndarray = field(default_factory=lambda: np.array([]))
 
     def __post_init__(self):
         # Round float columns to four decimal places
@@ -33,12 +35,21 @@ class DashboardData:
             self.analysis_data['Word Pieces'] = self.analysis_data['Word Pieces'].apply(
                 lambda x: ', '.join(x) if isinstance(x, list) else x
             )
+        
+        self.analysis_data['Consistency Ratio'] = np.where(
+            self.analysis_data['Total Train Occurrences'] != 0,  # Condition to check for non-zero denominator
+            self.analysis_data['Consistency Count'] / self.analysis_data['Total Train Occurrences'],  # Normal calculation if denominator is not zero
+            0
+        )
+
+        self.analysis_data['Inconsistency Ratio'] = np.where(
+            self.analysis_data['Total Train Occurrences'] != 0,
+            self.analysis_data['Inconsistency Count'] / self.analysis_data['Total Train Occurrences'],
+            0
+        )
         self.analysis_data['Normalized Token Entropy'] = DashboardData.normalized_entropy(self.analysis_data, 'Local Token Entropy', 'Token Max Entropy')  # filling 0/0 division as it generates Nan
         self.analysis_data['Normalized Word Entropy'] = DashboardData.normalized_entropy(self.analysis_data, 'Local Token Entropy', 'Token Max Entropy')  # filling 0/0 division as it generates Nan
-    @staticmethod
-    def round_floats(df):
-        for col in df.select_dtypes(include=['float']).columns:
-            df[col] = df[col].round(4)
+        self.analysis_data['Normalized Prediction Entropy'] = DashboardData.normalized_entropy(self.analysis_data, 'Prediction Entropy', 'Prediction Max Entropy')  # filling 0/0 division as it generates Nan
     
     def is_loaded(self, attribute):
         """Checks if the given attribute is loaded based on its type."""
@@ -46,23 +57,33 @@ class DashboardData:
         if isinstance(attr_value, pd.DataFrame):
             return not attr_value.empty
         elif isinstance(attr_value, go.Figure):
-            return len(attr_value.data) > 0  # Check if the figure has data
+            return len(attr_value.data) > 0  
+        elif isinstance(attr_value, np.ndarray):
+            return attr_value.size > 0
         return False  # Default case if the attribute type is unrecognized
 
     @staticmethod
+    def round_floats(df):
+        for col in df.select_dtypes(include=['float']).columns:
+            df[col] = df[col].round(4)
+            
+    @staticmethod
     def from_dict(dict_data: Dict[str, Any]):
         return DashboardData(**dict_data)
+    
     @staticmethod
-    def normalized_entropy(df, col1, col2):
-        return np.where(
-            (df[col1] == 0) & (df[col2] == 0),  # Condition for both columns being 0
-            0,  # Value if condition is true
-            np.where(
-                (df[col1] == -1) & (df[col2] == -1),  # Condition for both columns being -1
-                -1,  # Value if condition is true
-                df[col1] / df[col2]  # Default calculation
-            )
-        )
+    def normalized_entropy(df, raw_entropy, max_entropy):
+        result = np.full(df.shape[0], np.nan)
+        zero_mask = (df[raw_entropy] == 0) & (df[max_entropy] == 0)
+        result[zero_mask] = 0
+        negative_one_mask = (df[raw_entropy] == -1) & (df[max_entropy] == -1)
+        result[negative_one_mask] = -1
+        valid_mask = (df[max_entropy] != 0) & ~zero_mask & ~negative_one_mask
+        result[valid_mask] = df[raw_entropy][valid_mask] / df[max_entropy][valid_mask]
+        zero_div_mask = (df[max_entropy] == 0) & (df[raw_entropy] != 0)
+        result[zero_div_mask] = 0
+        return result
+
 
 class DataLoader:
     def __init__(self, config_manager, variant_name):
@@ -78,8 +99,8 @@ class DataLoader:
         try:
             if file_path.exists():
                 # Load Plotly figures specifically
-                if file_name in ["attention_weights_similarity", "attention_similarity_matrix"]:
-                    return file_handler.read_plotly(file_path)
+                if file_type == "npy":
+                    return file_handler.load_numpy(file_path.with_suffix(".npy"))
 
                 # Handle regular JSON data files
                 elif file_type == "json":
@@ -148,12 +169,13 @@ class DataManager:
             self.variants_data[variant] = self.load_variant(variant)
         return self.variants_data
 
-    # def is_data_loaded(self):
-    #     """Checks if all variants have data loaded in the cache."""
-    #     for variant in self.variants:
-    #         if self.cache.get(variant) is None:
-    #             return False  # Return False if any variant is not loaded
-    #     return True  # Return True if all variants are loaded
+    def is_data_loaded(self):
+        """Checks if all variants have data loaded in the cache."""
+        for variant in self.variants:
+            if self.cache.get(variant) is None:
+                return False  # Return False if any variant is not loaded
+        return True  # Return True if all variants are loaded
+    
     def is_any_variant_loaded(self):
         """
         Check if any variant is loaded in the cache.
