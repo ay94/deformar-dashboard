@@ -192,14 +192,14 @@ class ScatterWidthConfig:
 @dataclass
 class DecisionScatterConfig(ScatterConfig):
     # New fields
-    marker_size: float = 5
+    marker_size: float = 4
     marker_opacity: int = 1.0
-    line_width: float = 0.5
+    line_width: float = 0.3
     line_color: str = "rgba(47, 79, 79, 1.0)"
     autosize: bool = True
-    selected_marker_size: int = 10
-    selected_opacity: float = 0.78
-    unselected_marker_size: int = 5
+    selected_marker_size: int = 8
+    selected_opacity: float = 0.7
+    unselected_marker_size: int = 3.5
     unselected_opacity: float = 0.9
     width: int = None
     height: int = None
