@@ -86,12 +86,14 @@ class DecisionTabManager(BaseTabManager):
             return None
 
         # selected_df = self.filter_ignored(tab_data.analysis_data)
+        color = color_column
         selected_df = tab_data.analysis_data
         if selected_df.empty:
             logging.error("No relevant data available after filtering.")
             return None
         if selection_ids:
-            selected_df[color_column] = np.where(
+            color = 'color'
+            selected_df[color] = np.where(
                 selected_df["Global Id"].isin(selection_ids),
                 "SELECTED",
                 selected_df[color_column],
@@ -122,7 +124,7 @@ class DecisionTabManager(BaseTabManager):
             selected_df,
             x_column=x_column,
             y_column=y_column,
-            color_column=color_column,
+            color_column=color,
             symbol_column=symbol_column,
         )
 
@@ -144,12 +146,14 @@ class DecisionTabManager(BaseTabManager):
             logging.error("No data available for the selected variant.")
             return None
 
+        color = color_column
         selected_df = self.filter_ignored(tab_data.analysis_data)
         if selected_df.empty:
             logging.error("No relevant data available after filtering.")
             return None
         if selection_ids:
-            selected_df[color_column] = np.where(
+            color = 'color'
+            selected_df[color] = np.where(
                 selected_df["Global Id"].isin(selection_ids),
                 "SELECTED",
                 selected_df[color_column],
@@ -165,58 +169,59 @@ class DecisionTabManager(BaseTabManager):
             selected_df,
             x_column=x_column,
             y_column=y_column,
-            color_column=color_column,
+            color_column=color,
             symbol_column=symbol_column,
         )
 
-    def generate_selection_data_table(
-        self,
-        variant,
-        x_column,
-        y_column,
-        color_column,
-        symbol_column=None,
-        selection_ids=None,
-    ):
-        """
-        Calculate and return correlation matrix and scatter plot for selected data.
-        """
-        tab_data = self.get_tab_data(variant)
+    # def generate_selection_data_table(
+    #     self,
+    #     variant,
+    #     x_column,
+    #     y_column,
+    #     color_column,
+    #     symbol_column=None,
+    #     selection_ids=None,
+    # ):
+    #     """
+    #     Calculate and return correlation matrix and scatter plot for selected data.
+    #     """
+    #     tab_data = self.get_tab_data(variant)
 
-        if not tab_data:
-            logging.error("No data available for the selected variant.")
-            return None
+    #     if not tab_data:
+    #         logging.error("No data available for the selected variant.")
+    #         return None
 
-        selected_df = self.filter_ignored(tab_data.analysis_data)
-        if selected_df.empty:
-            logging.error("No relevant data available after filtering.")
-            return None
-        if selection_ids:
-            selected_df[color_column] = np.where(
-                selected_df["Global Id"].isin(selection_ids),
-                "SELECTED",
-                selected_df[color_column],
-            )
-            logging.info("Selected points are filtered and modified.")
+    #     selected_df = self.filter_ignored(tab_data.analysis_data)
+    #     if selected_df.empty:
+    #         logging.error("No relevant data available after filtering.")
+    #         return None
+    #     if selection_ids:
+    #         selected_df[color_column] = np.where(
+    #             selected_df["Global Id"].isin(selection_ids),
+    #             "SELECTED",
+    #             selected_df[color_column],
+    #         )
+    #         logging.info("Selected points are filtered and modified.")
 
-        if not color_column:
-            logging.error("Please select color column.")
+    #     if not color_column:
+    #         logging.error("Please select color column.")
 
-        measure_analysis = MeasureScatter()
+    #     measure_analysis = MeasureScatter()
 
-        return measure_analysis.generate_plot(
-            selected_df,
-            x_column=x_column,
-            y_column=y_column,
-            color_column=color_column,
-            symbol_column=symbol_column,
-        )
+    #     return measure_analysis.generate_plot(
+    #         selected_df,
+    #         x_column=x_column,
+    #         y_column=y_column,
+    #         color_column=color_column,
+    #         symbol_column=symbol_column,
+    #     )
 
     def generate_tag_proportion(self, variant, selection_ids=None):
         """
         Calculate and return correlation matrix and scatter plot for selected data.
         """
         tab_data = self.get_tab_data(variant)
+        plot_data = None
 
         if not tab_data:
             logging.error("No data available for the selected variant.")
@@ -264,10 +269,10 @@ class DecisionTabManager(BaseTabManager):
         similarity_analysis = SimilarityMatrix()
 
         attention_matrices = similarity_analysis.generate_matrix(
-            tab_data.attention_similarity_matrix
+            tab_data.attention_similarity_matrix, "Attention Similarity Matrix"
         )
         attention_weights = similarity_analysis.generate_matrix(
-            tab_data.attention_weights_similarity_matrix
+            tab_data.attention_weights_similarity_matrix, "Attention Weights Similarity Matrix",
         )
         if attention_matrices is None and attention_weights is None:
             logging.error("No Training Impact Available.")
