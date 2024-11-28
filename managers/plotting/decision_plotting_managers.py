@@ -25,30 +25,32 @@ class CorrelationMatrix(BaseAnalysis):
         """
         Calculate and return correlation matrix and scatter plot for selected data.
         """
-        columns = CorrelationColumns
-        true_labels_col = CorrelationColumns.TRUE_LABELS.value
+        columns = CorrelationColumns()
+        correlation_columns = columns.get_columns(include_confidence=True)
 
         try:
-            # Aggregate the DataFrame by true_labels and compute mean of each column
-            aggregated_df = (
-                selected_df.groupby(true_labels_col)[columns.list_columns()[1:]]
-                .agg("mean")
-                .reset_index()
-            )
-            numeric_cols = aggregated_df.select_dtypes(
-                include=[np.number]
-            ).columns.tolist()
+            # # Aggregate the DataFrame by true_labels and compute mean of each column
+            # aggregated_df = (
+            #     selected_df.groupby(true_labels_col)[columns.list_columns()]
+            #     .agg("mean")
+            #     .reset_index()
+            # )
+            # numeric_cols = selected_df.select_dtypes(
+            #     include=[np.number]
+            # ).columns.tolist()
 
             # Compute the correlation matrix
 
-            correlation_matrix = aggregated_df[numeric_cols].corr(
+            correlation_matrix = selected_df[correlation_columns].corr(
                 method=correlation_method
             )
-            # Create a mask for the upper triangle
-            mask = np.triu(np.ones_like(correlation_matrix, dtype=bool))
+            
+            
+            # # Create a mask for the upper triangle
+            # mask = np.triu(np.ones_like(correlation_matrix, dtype=bool))
 
-            # Set the values in the upper triangle to NaN
-            correlation_matrix = correlation_matrix.mask(mask)
+            # # Set the values in the upper triangle to NaN
+            # correlation_matrix = correlation_matrix.mask(mask)
             config = MatrixConfig(
                 title=f"{correlation_method.capitalize()} Correlation Matrix of Aggregated Data",
                 x="Variables",
@@ -56,8 +58,8 @@ class CorrelationMatrix(BaseAnalysis):
                 color="Correlation",
                 color_continuous_scale="RdBu_r",
                 font_color="#000000",
-                width=700,  # Slightly larger width for better visibility
-                height=600,
+                width=900,  # Slightly larger width for better visibility
+                height=700,
             )
 
             # Generate the plot
@@ -189,13 +191,13 @@ class CentroidAverageSimilarity(BaseAnalysis):
 
 class SimilarityMatrix(BaseAnalysis):
     @BaseAnalysis.handle_errors
-    def generate_matrix(self, similarity_matrix):
+    def generate_matrix(self, similarity_matrix, title):
         """
         Calculate and return correlation matrix and scatter plot for selected data.
         """
 
         config = MatrixConfig(
-            title="Attention Similarity Matrix",
+            title=title,
             x="Heads",
             y="Layers",
             color="Similarity Score",
