@@ -65,11 +65,11 @@ class LoadTabLayout:
                                 html.Div(
                                     id="data_status_table",
                                     style={
-                                        "width": "60%",
-                                        "height": "500px",
+                                        "width": "40%",
+                                        "height": "60%",
                                         "margin": "auto",
                                         "overflowX": "auto",
-                                        "overflowY": "auto",
+                                        "overflowY": "hidden",
                                     },
                                 ),
                             ],
