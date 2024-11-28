@@ -100,7 +100,6 @@ def register_callbacks(app, variants_data):
                 color_column = color_columns[0]
                 if len(color_columns) > 1:
                     symbol_column = color_columns[1]
-
             selection_ids = process_selection(measureSelection)
             fig = tab_manager.generate_decision_plot(
                 variant=variant,
@@ -188,7 +187,10 @@ def register_callbacks(app, variants_data):
 
     @app.callback(
         Output("measure_store", "data"),
-        [Input("measure_scatter", "selectedData"), Input("clear_measure", "n_clicks")],
+        [
+            Input("measure_scatter", "selectedData"), 
+            Input("clear_measure", "n_clicks")
+        ],
         prevent_initial_call=True,
     )
     def store_measure_selection(selectedData, _):
