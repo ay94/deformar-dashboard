@@ -1,7 +1,7 @@
 import logging
 from dataclasses import dataclass, field
 from typing import Any, Dict
-
+import re
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
@@ -16,9 +16,11 @@ class DashboardData:
     train_data: pd.DataFrame = field(default_factory=pd.DataFrame)
     kmeans_results: pd.DataFrame = field(default_factory=pd.DataFrame)
     results: pd.DataFrame = field(default_factory=pd.DataFrame)
-    entity_report: pd.DataFrame = field(default_factory=pd.DataFrame)
+    entity_non_strict_report: pd.DataFrame = field(default_factory=pd.DataFrame)
+    entity_strict_report: pd.DataFrame = field(default_factory=pd.DataFrame)
     token_report: pd.DataFrame = field(default_factory=pd.DataFrame)
-    entity_confusion_data: pd.DataFrame = field(default_factory=pd.DataFrame)
+    entity_non_strict_confusion_data: pd.DataFrame = field(default_factory=pd.DataFrame)
+    entity_strict_confusion_data: pd.DataFrame = field(default_factory=pd.DataFrame)
     centroids_avg_similarity_matrix: pd.DataFrame = field(default_factory=pd.DataFrame)
     attention_weights_similarity_heatmap: go.Figure = field(default_factory=go.Figure)
     attention_weights_similarity_matrix: np.ndarray = field(
@@ -73,8 +75,9 @@ class DashboardData:
             self.analysis_data, "Prediction Entropy", "Prediction Max Entropy"
         )  # filling 0/0 division as it generates Nan
 
+
     def is_loaded(self, attribute):
-        """Checks if the given attribute is loaded based on its type."""
+        """Checks if the given a§``````ttribute is loaded based on its type."""
         attr_value = getattr(self, attribute)
         if isinstance(attr_value, pd.DataFrame):
             return not attr_value.empty
@@ -82,6 +85,8 @@ class DashboardData:
             return len(attr_value.data) > 0
         elif isinstance(attr_value, np.ndarray):
             return attr_value.size > 0
+        elif isinstance(attr_value, dict):
+            return bool(attr_value)  # Returns True if the dictionary is non-empty
         return False  # Default case if the attribute type is unrecognized
 
     @staticmethod
@@ -105,8 +110,7 @@ class DashboardData:
         zero_div_mask = (df[max_entropy] == 0) & (df[raw_entropy] != 0)
         result[zero_div_mask] = 0
         return result
-
-
+    
 class DataLoader:
     def __init__(self, config_manager, variant_name):
         self.data_config = config_manager.data_config
@@ -115,28 +119,34 @@ class DataLoader:
 
     def load(self, file_name, file_config):
         file_handler = FileHandler(self.data_dir / file_config["folder"])
-        file_type = file_config["format"]
-        file_path = file_handler.file_path / f"{file_name}.{file_type}"
+        file_type = file_config.get("type", None)
+        file_format = file_config["format"]
+        file_path = file_handler.file_path / f"{file_name}.{file_format}"
 
         try:
             if file_path.exists():
-                # Load Plotly figures specifically
-                if file_type == "npy":
-                    return file_handler.load_numpy(file_path.with_suffix(".npy"))
+                match file_format:
+                    case "npy": 
+                        return file_handler.load_numpy(file_path.with_suffix(".npy"))
 
-                # Handle regular JSON data files
-                elif file_type == "json":
-                    data = file_handler.read_json(file_path)
-                    if (
-                        "column_mappings" in file_config
-                        and file_config["column_mappings"]
-                    ):
-                        data = self.apply_column_mappings(
-                            data, file_config["column_mappings"]
-                        )
-                    return data
-            else:
-                logging.warning("File does not exist: %s", file_path)
+                    # Handle regular JSON data files
+                    case "json":
+                        # Check if there's a specific type of JSON handling required
+                        if file_type and file_type =='dict':
+                            return file_handler.load_json(file_path)
+                        else:
+                            data = file_handler.read_json(file_path)
+                        if (
+                            "column_mappings" in file_config
+                            and file_config["column_mappings"]
+                        ):
+                            data = self.apply_column_mappings(
+                                data, file_config["column_mappings"]
+                            )
+                        return data
+                    case _:
+                        logging.warning("File does not exist: %s", file_path)
+                        
         except Exception as e:
             logging.error("Failed to load data from %s: %s", file_path, e)
             return None
