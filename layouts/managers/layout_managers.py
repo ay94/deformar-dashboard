@@ -145,7 +145,7 @@ class CustomDataTable:
         data=None,
         columns=None,
         style_header=None,
-        page_size=10,
+        page_size=15,
         **kwargs,
     ):
         if table_id is None:
