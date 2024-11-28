@@ -1,14 +1,18 @@
 import logging
 from enum import Enum
+from dataclasses import dataclass, field
 
 
 class ResultsType(Enum):
     TRAINING = "Training Results"
     CLUSTERING = "Clustering Results"
+    TOKEN = "Token-Level Report"
+    ENTITY = "Entity-Level Report"
 
 
 class CustomAnalysisType(Enum):
     TOKEN = "Token Variability"
+    WORD = "Word Variability"
     TAG = "Tag Ambiguity"
     TOKEN_LENGTH = "Token Length Distribution"
     SENTENCE_LENGTH = "Sentence Length Distribution"
@@ -51,8 +55,8 @@ class TokenVariabilityColumns(Enum):
 class TagAmbiguityColumns(Enum):
     TRUE_LABELS = "True Labels"
     CORE_TOKENS = "Core Tokens"
-    CONSISTENCY = "Consistency Count"
-    INCONSISTENCY = "Inconsistency Count"
+    CONSISTENCY = "Consistency Ratio"
+    INCONSISTENCY = "Inconsistency Ratio"
     TOKEN_ENTROPY = "Local Token Entropy"
     WORD_ENTROPY = "Local Word Entropy"
     DATASET_TOKEN_ENTROPY = "Dataset Token Entropy"
@@ -120,40 +124,69 @@ class ErrorRateColumns(Enum):
     TOTAL_COUNT = "total_count"
     ERROR_COUNT = "error_count"
     ERROR_RATE = "error_rate"
-    WEIGHTED_ERROR_RATE = "weighted_error_rate"
+    WEIGHTED_ERROR_RATE = "Weighted Error Rate"
 
 
-class CorrelationColumns(Enum):
-    LOSSES = "Losses"
-    TRUE_TOKEN_SCORE = "True Token Score"
-    PRED_TOKEN_SCORE = "Pred Token Score"
-    CONSISTENCY_RATIO = "Consistency Count"
-    INCONSISTENCY_RATIO = "Inconsistency Count"
-    LOCAL_TOKEN_ENTROPY = "Local Token Entropy"
-    TOKEN_MAX_ENTROPY = "Token Max Entropy"
-    DATASET_TOKEN_ENTROPY = "Dataset Token Entropy"
-    NORMALIZED_TOKEN_ENTROPY = "Normalized Token Entropy"
-    LOCAL_WORD_ENTROPY = "Local Word Entropy"
-    WORD_MAX_ENTROPY = "Word Max Entropy"
-    DATASET_WORD_ENTROPY = "Dataset Word Entropy"
-    NORMALIZED_WORD_ENTROPY = "Normalized Word Entropy"
-    TOKENIZATION_RATE = "Tokenization Rate"
-    PREDICTION_ENTROPY = "Prediction Entropy"
-    PREDICTION_MAX_ENTROPY = "Prediction Max Entropy"
-    TOKEN_CONFIDENCE = "Token Confidence"
-    VARIABILITY = "Variability"
-    TRUE_LABELS = "True Labels"
+# class CorrelationColumns(Enum):
+#     LOSSES = "Losses"
+#     TRUE_TOKEN_SCORE = "True Token Score"
+#     PRED_TOKEN_SCORE = "Pred Token Score"
+#     CONSISTENCY_COUNT = "Consistency Count"
+#     CONSISTENCY_RATIO = "Consistency Ratio"
+#     INCONSISTENCY_COUNT = "Inconsistency Count"
+#     INCONSISTENCY_RATIO = "Inconsistency Ratio"
+#     LOCAL_TOKEN_ENTROPY = "Local Token Entropy"
+#     NORMALIZED_TOKEN_ENTROPY= "Normalized Token Entropy"
+#     DATASET_TOKEN_ENTROPY = "Dataset Token Entropy"
+#     LOCAL_WORD_ENTROPY = "Local Word Entropy"
+#     NORMALIZED_WORD_ENTROPY = "Normalized Word Entropy"
+#     DATASET_WORD_ENTROPY = "Dataset Word Entropy"
+#     TOKENIZATION_RATE = "Tokenization Rate"
+#     PREDICTION_ENTROPY = "Prediction Entropy"
+#     NORMALIZED_PREDICTION_ENTROPY = "Normalized Prediction Entropy"
+#     TOKEN_CONFIDENCE = "Token Confidence"
+#     VARIABILITY = "Variability"
+#     B_LOC_CONFIDENCE = "B-LOC Confidence"
+#     B_PERS_CONFIDENCE = "B-PERS Confidence"
+#     B_ORG_CONFIDENCE = "B-ORG Confidence"
+#     B_MISC_CONFIDENCE = "B-MISC Confidence"
+#     TRUE_LABELS = "True Labels"
 
-    @staticmethod
-    def list_columns():
-        """
-        Returns a list of all column names for use in correlation analysis.
-        """
-        return [
-            col.value
-            for col in CorrelationColumns
-            if col != CorrelationColumns.TRUE_LABELS
-        ]
+#     @staticmethod
+#     def list_columns():
+#         """
+#         Returns a list of all column names for use in correlation analysis.
+#         """
+#         return [
+#             col.value
+#             for col in CorrelationColumns
+#             if col != CorrelationColumns.TRUE_LABELS
+#         ]
+
+
+@dataclass
+class CorrelationColumns:
+    core_metrics: list = field(default_factory=lambda: [
+        "Losses", "True Silhouette Score", "Pred Silhouette Score", "Consistency Count",
+        "Consistency Ratio", "Inconsistency Count", "Inconsistency Ratio",
+        "Local Token Entropy", "Normalized Token Entropy", "Dataset Token Entropy",
+        "Local Word Entropy", "Normalized Word Entropy", "Dataset Word Entropy",
+        "Tokenization Rate", "Prediction Entropy", "Normalized Prediction Entropy",
+        "Token Confidence", "Variability"
+    ])
+    confidence_metrics: list = field(default_factory=lambda: [
+        "B-LOC Confidence", "B-PERS Confidence", "B-ORG Confidence", "B-MISC Confidence",
+        "I-LOC Confidence", "I-PERS Confidence", "I-ORG Confidence", "I-MISC Confidence",
+        "O Confidence"
+    ])
+    # true_labels: list = field(default_factory=lambda: ["True Labels"])
+    
+    def get_columns(self, include_confidence=False):
+        cols = self.core_metrics
+        if include_confidence:
+            cols += self.confidence_metrics
+        return cols
+
 
 
 # class ColorMap(Enum):
