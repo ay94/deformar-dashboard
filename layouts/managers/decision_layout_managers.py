@@ -135,7 +135,7 @@ class DecisionTabLayout:
                             width=12,
                         )
                     ],
-                    style={"margin-top": "30px"},
+                    style={"margin-top": "50px"},
                 ),
             ],
             fluid=True,
