@@ -20,7 +20,7 @@ class BaseTabManager:
 
     def filter_ignored(self, data, label_col="Labels", ignore_label=-100):
         """Filter data based on a provided condition."""
-        return data[data[label_col] != ignore_label].copy()
+        return data[data[label_col] != ignore_label]
 
 
 def create_violin_plot(
@@ -238,7 +238,9 @@ def create_scatter_width_plot(data, x_column, y_column, config: ScatterConfig):
         title=config.title,
         template=config.template,
         hover_data=config.hover_data,
+        trendline="ols"
     )
+    
 
     fig.update_traces(
         marker=dict(
@@ -248,7 +250,6 @@ def create_scatter_width_plot(data, x_column, y_column, config: ScatterConfig):
     )
 
     fig.update_layout(
-        xaxis_title=config.xaxis_title or x_column,
         yaxis_title=config.yaxis_title or y_column,
         autosize=config.autosize,
         width=config.width,
