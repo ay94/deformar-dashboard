@@ -8,6 +8,7 @@ class ResultsType(Enum):
     CLUSTERING = "Clustering Results"
     TOKEN = "Token-Level Report"
     ENTITY = "Entity-Level Report"
+    STRICT_ENTITY = "Entity-Level Strict Report"
 
 
 class CustomAnalysisType(Enum):
@@ -175,8 +176,8 @@ class CorrelationColumns:
         "Token Confidence", "Variability"
     ])
     confidence_metrics: list = field(default_factory=lambda: [
-        "B-LOC Confidence", "B-PERS Confidence", "B-ORG Confidence", "B-MISC Confidence",
-        "I-LOC Confidence", "I-PERS Confidence", "I-ORG Confidence", "I-MISC Confidence",
+        "B-LOC Confidence", "B-PER Confidence", "B-ORG Confidence", "B-MISC Confidence",
+        "I-LOC Confidence", "I-PER Confidence", "I-ORG Confidence", "I-MISC Confidence",
         "O Confidence"
     ])
     # true_labels: list = field(default_factory=lambda: ["True Labels"])

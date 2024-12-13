@@ -216,10 +216,12 @@ class ColorMap:
         default_factory=lambda: {
             "B-LOC": "darkgreen",
             "B-PERS": "deepskyblue",
+            "B-PER": "deepskyblue",
             "B-ORG": "darkcyan",
             "B-MISC": "palevioletred",
             "I-LOC": "yellowgreen",
             "I-PERS": "lightblue",
+            "I-PER": "lightblue",
             "I-ORG": "cyan",
             "I-MISC": "violet",
             "O": "saddlebrown",
@@ -250,6 +252,11 @@ class ColorMap:
             "[CLS]": "grey",  # Explicitly handle CLS
             "[SEP]": "grey",  # Explicitly handle SEP
             "SELECTED": "black",
+            "No Errors": "darkgreen",
+            "Exclusion": "deepskyblue",
+            "Type": "deepskyblue",
+            "Chunk": "darkcyan",
+            "Type and Chunk": "palevioletred",
         }
     )
 

@@ -94,7 +94,9 @@ class DatasetTabManager(BaseTabManager):
         elif results_type_enum == ResultsType.TOKEN:
             data = tab_data.token_report
         elif results_type_enum == ResultsType.ENTITY:
-            data = tab_data.entity_report
+            data = tab_data.entity_non_strict_report
+        elif results_type_enum == ResultsType.STRICT_ENTITY:
+            data = tab_data.entity_strict_report
         else:
             logging.error("Unknown results type.")
             return None

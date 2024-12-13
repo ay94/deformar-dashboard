@@ -40,7 +40,13 @@ class CorrelationMatrix(BaseAnalysis):
             # ).columns.tolist()
 
             # Compute the correlation matrix
-
+            # filtered = selected_df[selected_df != -1].copy()
+            # import pandas as pd
+            # filtered = selected_df.replace(-1, pd.NA)
+            # filtered = filtered.dropna()
+            # correlation_matrix = filtered[correlation_columns].corr(
+            #     method=correlation_method
+            # )
             correlation_matrix = selected_df[correlation_columns].corr(
                 method=correlation_method
             )
@@ -146,7 +152,12 @@ class MeasureScatter(BasePlotting):
         return create_scatter_plot_with_color(
             selected_df, x_column, y_column, color_column, symbol_column, scatter_config
         )
-
+        #  import pandas as pd
+        # filtered = selected_df.replace(-1, pd.NA)
+        # filtered = filtered.dropna()
+        # return create_scatter_plot_with_color(
+        #     filtered, x_column, y_column, color_column, symbol_column, scatter_config
+        # )
 
 class SelectionTagProportion(BaseAnalysis):
     @BaseAnalysis.handle_errors
@@ -160,8 +171,8 @@ class SelectionTagProportion(BaseAnalysis):
             data=confusion_table,
             title="Selection Tag Proportion",
             color_column=columns.PRED_LABELS.value,
-            xaxis_title=columns.TRUE_LABELS.value,
-            yaxis_title=columns.PRED_LABELS.value,
+            xaxis_title=columns.PRED_LABELS.value,
+            yaxis_title=columns.TRUE_LABELS.value,
             width=700,
             height=700,
             color_map=color_map.color_map,
