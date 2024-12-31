@@ -19,8 +19,12 @@ class DashboardData:
     entity_non_strict_report: pd.DataFrame = field(default_factory=pd.DataFrame)
     entity_strict_report: pd.DataFrame = field(default_factory=pd.DataFrame)
     token_report: pd.DataFrame = field(default_factory=pd.DataFrame)
+    token_confusion_matrix: pd.DataFrame = field(default_factory=pd.DataFrame)
+    token_misclassifications: pd.DataFrame = field(default_factory=pd.DataFrame)
     entity_non_strict_confusion_data: pd.DataFrame = field(default_factory=pd.DataFrame)
+    entity_non_strict_misclassifications: pd.DataFrame = field(default_factory=pd.DataFrame)
     entity_strict_confusion_data: pd.DataFrame = field(default_factory=pd.DataFrame)
+    entity_strict_misclassifications: pd.DataFrame = field(default_factory=pd.DataFrame)
     centroids_avg_similarity_matrix: pd.DataFrame = field(default_factory=pd.DataFrame)
     attention_weights_similarity_heatmap: go.Figure = field(default_factory=go.Figure)
     attention_weights_similarity_matrix: np.ndarray = field(
@@ -134,6 +138,8 @@ class DataLoader:
                         # Check if there's a specific type of JSON handling required
                         if file_type and file_type =='dict':
                             return file_handler.load_json(file_path)
+                        elif file_type and file_type =='index':
+                            return pd.read_json(file_path, orient='index')
                         else:
                             data = file_handler.read_json(file_path)
                         if (
