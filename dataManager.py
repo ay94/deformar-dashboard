@@ -44,7 +44,7 @@ class DashboardData:
         # Convert list to string in the 'Word Pieces' column of analysis_data if it exists
         if "Word Pieces" in self.analysis_data.columns:
             self.analysis_data["Word Pieces"] = self.analysis_data["Word Pieces"].apply(
-                lambda x: ", ".join(x) if isinstance(x, list) else x
+                lambda x: ", ".join(x) if isinstance(x, list) else ("" if pd.isna(x) else x)
             )
 
         self.analysis_data["Consistency Ratio"] = np.where(
@@ -71,7 +71,7 @@ class DashboardData:
         self.analysis_data[
             "Normalized Word Entropy"
         ] = DashboardData.normalized_entropy(
-            self.analysis_data, "Local Token Entropy", "Token Max Entropy"
+            self.analysis_data, "Local Word Entropy", "Word Max Entropy"
         )  # filling 0/0 division as it generates Nan
         self.analysis_data[
             "Normalized Prediction Entropy"
