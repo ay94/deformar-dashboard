@@ -22,9 +22,9 @@ class DashboardData:
     token_confusion_matrix: pd.DataFrame = field(default_factory=pd.DataFrame)
     token_misclassifications: pd.DataFrame = field(default_factory=pd.DataFrame)
     entity_non_strict_confusion_data: pd.DataFrame = field(default_factory=pd.DataFrame)
-    entity_non_strict_misclassifications: pd.DataFrame = field(default_factory=pd.DataFrame)
+    non_strict_entity_misclassifications: pd.DataFrame = field(default_factory=pd.DataFrame)
     entity_strict_confusion_data: pd.DataFrame = field(default_factory=pd.DataFrame)
-    entity_strict_misclassifications: pd.DataFrame = field(default_factory=pd.DataFrame)
+    strict_entity_misclassifications: pd.DataFrame = field(default_factory=pd.DataFrame)
     centroids_avg_similarity_matrix: pd.DataFrame = field(default_factory=pd.DataFrame)
     attention_weights_similarity_heatmap: go.Figure = field(default_factory=go.Figure)
     attention_weights_similarity_matrix: np.ndarray = field(
@@ -46,6 +46,17 @@ class DashboardData:
             self.analysis_data["Word Pieces"] = self.analysis_data["Word Pieces"].apply(
                 lambda x: ", ".join(x) if isinstance(x, list) else ("" if pd.isna(x) else x)
             )
+        
+        # Normalize PER Entity Tag
+        tag_mapping = {
+            'B-PERS': 'B-PER',
+            'I-PERS': 'I-PER'
+        }
+        
+        if "True Labels" in self.analysis_data.columns:
+            self.analysis_data["True Labels"] = self.analysis_data["True Labels"].replace(tag_mapping)
+        if "Pred Labels" in self.analysis_data.columns:
+            self.analysis_data["Pred Labels"] = self.analysis_data["Pred Labels"].replace(tag_mapping)
 
         self.analysis_data["Consistency Ratio"] = np.where(
             self.analysis_data["Total Train Occurrences"]
@@ -63,25 +74,28 @@ class DashboardData:
             / self.analysis_data["Total Train Occurrences"],
             0,
         )
+        self.analysis_data["Confusion Components"] = DashboardData.classify_ner(
+            self.analysis_data, "True Labels", "Pred Labels"
+        )
         self.analysis_data[
-            "Normalized Token Entropy"
+            "Token Entropy"
         ] = DashboardData.normalized_entropy(
             self.analysis_data, "Local Token Entropy", "Token Max Entropy"
         )  # filling 0/0 division as it generates Nan
         self.analysis_data[
-            "Normalized Word Entropy"
+            "Word Entropy"
         ] = DashboardData.normalized_entropy(
             self.analysis_data, "Local Word Entropy", "Word Max Entropy"
         )  # filling 0/0 division as it generates Nan
         self.analysis_data[
-            "Normalized Prediction Entropy"
+            "Prediction Uncertainty"
         ] = DashboardData.normalized_entropy(
             self.analysis_data, "Prediction Entropy", "Prediction Max Entropy"
         )  # filling 0/0 division as it generates Nan
 
 
     def is_loaded(self, attribute):
-        """Checks if the given a§``````ttribute is loaded based on its type."""
+        """Checks if the given attribute is loaded based on its type."""
         attr_value = getattr(self, attribute)
         if isinstance(attr_value, pd.DataFrame):
             return not attr_value.empty
@@ -114,6 +128,17 @@ class DashboardData:
         zero_div_mask = (df[max_entropy] == 0) & (df[raw_entropy] != 0)
         result[zero_div_mask] = 0
         return result
+    
+    @staticmethod   
+    def classify_ner(df, true_label_col, pred_label_col):
+        conditions = [
+            (df[pred_label_col] == df[true_label_col]) & (df[pred_label_col] != "O"),
+            (df[pred_label_col] != df[true_label_col]) & (df[pred_label_col] != "O"),
+            (df[pred_label_col] != df[true_label_col]) & (df[true_label_col] != "O") & (df[pred_label_col] == "O"),
+        ]
+        choices = ["TP", "FP", "FN"]
+        return np.select(conditions, choices, default="TN")  # Return only the classification column
+
     
 class DataLoader:
     def __init__(self, config_manager, variant_name):
