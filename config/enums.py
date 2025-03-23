@@ -167,6 +167,13 @@ class ErrorRateColumns(Enum):
 
 @dataclass
 class CorrelationColumns:
+    numeric_variables: list = field(default_factory=lambda: [
+        "Token Ambiguity", "Word Ambiguity",
+        "Consistency Ratio", "Inconsistency Ratio", 
+        "Tokenization Rate",
+        "Token Confidence", "Loss Values", "Prediction Uncertainty", 
+        "True Silhouette", "Pred Silhouette"
+    ])
     core_metrics: list = field(default_factory=lambda: [
         "Losses", "True Silhouette Score", "Pred Silhouette Score", "Consistency Count",
         "Consistency Ratio", "Inconsistency Count", "Inconsistency Ratio",
@@ -183,9 +190,10 @@ class CorrelationColumns:
     # true_labels: list = field(default_factory=lambda: ["True Labels"])
     
     def get_columns(self, include_confidence=False):
-        cols = self.core_metrics
-        if include_confidence:
-            cols += self.confidence_metrics
+        cols = self.numeric_variables
+        # cols = self.core_metrics
+        # if include_confidence:
+        #     cols += self.confidence_metrics
         return cols
 
 
