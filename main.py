@@ -5,7 +5,7 @@ from config.config_managers import DashboardConfigManager
 
 
 def main():
-    CONFIG_PATH = (Path(__file__).parents[1] / "dashboard-config.yaml").resolve()
+    CONFIG_PATH = (Path(__file__).parents[1] / "analysis-config.yaml").resolve()
 
     config_manager = DashboardConfigManager(CONFIG_PATH)
     dev_config = config_manager.development_config
