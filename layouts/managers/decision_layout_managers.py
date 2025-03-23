@@ -9,12 +9,13 @@ from layouts.managers.layout_managers import (CustomButton, LoadingContainer,
 
 class DecisionSection:
     def __init__(self, config):
-        self.decision_type_dropdown = dcc.Dropdown(
-            id="decision_type",
+        
+        self.model_type_dropdown = dcc.Dropdown(
+            id="model_type",
             multi=False,
-            placeholder="Select Decision type...",
+            placeholder="Select Model type...",
             options=generate_dropdown_options(
-                config.get("decision_type", ["Wrong Columns"])
+                config.get("model_type", ["Wrong Columns"])
             ),  # Assuming you have a function to generate options
             style={
                 "width": "100%"
@@ -24,9 +25,31 @@ class DecisionSection:
         self.decision_columns_dropdown = dcc.Dropdown(
             id="decision_columns",
             multi=True,
-            placeholder="Select Color column...",
+            placeholder="Select Decision Color column...",
             options=generate_dropdown_options(
-                config.get("decision_columns", ["Wrong Columns"])
+                config.get("categorical_columns", ["Wrong Columns"])
+            ),  # Assuming you have a function to generate options
+            style={
+                "width": "100%"
+            },  # Assuming you want to use the full width for styling
+        )
+        self.measure_columns_dropdown = dcc.Dropdown(
+            id="measure_columns",
+            multi=True,
+            placeholder="Select Measure Color column...",
+            options=generate_dropdown_options(
+                config.get("categorical_columns", ["Wrong Columns"])
+            ),  # Assuming you have a function to generate options
+            style={
+                "width": "100%"
+            },  # Assuming you want to use the full width for styling
+        )
+        self.correlation_columns_dropdown = dcc.Dropdown(
+            id="correlation_columns",
+            multi=True,
+            placeholder="Select Correlation columns...",
+            options=generate_dropdown_options(
+                config.get("numerical_columns", ["Wrong Columns"])
             ),  # Assuming you have a function to generate options
             style={
                 "width": "100%"
@@ -54,8 +77,10 @@ class DecisionSection:
         return SectionContainer(
             "Decision Boundary Analysis",
             [
-                self.decision_type_dropdown,
+                self.model_type_dropdown,
                 self.decision_columns_dropdown,
+                self.measure_columns_dropdown,
+                self.correlation_columns_dropdown,
                 self.decision_correlation_type_dropdown,
                 self.plot_button,  # Include the message
                 self.clear_decision,
@@ -140,17 +165,30 @@ class DecisionTabLayout:
             ],
             fluid=True,
         )
-
-        auxiliary_analysis = dbc.Container(
+        clustering_alignment_header = dbc.Container(
+            dbc.Row(
+                dbc.Col(
+                    html.H4("Clustering Analysis", className="section-header"),
+                    width=12,
+                    style={
+                        "text-align": "center",
+                        "margin-top": "20px",
+                        "margin-bottom": "20px",
+                    },
+                )
+            ),
+            fluid=True,
+        )
+        clustering_analysis = dbc.Container(
             [
                 dbc.Row(
                     [
                         dbc.Col(
                             dcc.Loading(
-                                id="loading_selection_tags",
+                                id="loading_clustering_results",
                                 type="default",
                                 children=html.Div(
-                                    id="selection_tag_container",
+                                    id="cluster_results_container",
                                     style={
                                         "width": "100%",
                                         "height": "auto",
@@ -177,6 +215,62 @@ class DecisionTabLayout:
                             width=6,
                             style={"padding": "5px"},
                         ),
+                    ]
+                )
+            ],
+            fluid=True,
+        )
+        
+        selection_header = dbc.Container(
+            dbc.Row(
+                dbc.Col(
+                    html.H4("Selections Summary", className="section-header"),
+                    width=12,
+                    style={
+                        "text-align": "center",
+                        "margin-top": "20px",
+                        "margin-bottom": "20px",
+                    },
+                )
+            ),
+            fluid=True,
+        )
+        selection_analysis = dbc.Container(
+            [
+                dbc.Row(
+                    [
+                        dbc.Col(
+                            dcc.Loading(
+                                id="loading_selection_tags",
+                                type="default",
+                                children=html.Div(
+                                    id="selection_tag_container",
+                                    style={
+                                        "width": "100%",
+                                        "height": "auto",
+                                        "overflow": "visible",
+                                    },  # Use dynamic height and ensure overflow is visible
+                                ),
+                            ),
+                            width=6,
+                            style={"padding": "5px"},
+                        ),
+                        # dbc.Col(
+                        #     dcc.Loading(
+                        #         id="loading_clustering_table",
+                        #         type="default",
+                        #         children=html.Div(
+                        #             id="centroid_matrix_container",
+                        #             style={
+                        #                 "width": "100%",
+                        #                 "height": "auto",
+                        #                 "overflow": "visible",
+                        #             },  # Use dynamic height and ensure overflow is visible
+                        #         ),
+                        #     ),
+                        #     width=6,
+                        #     style={"padding": "5px"},
+                        # ),
                     ]
                 )
             ],
@@ -261,7 +355,10 @@ class DecisionTabLayout:
                 decision_section,
                 decision_graph_prompt,
                 measure_container,
-                auxiliary_analysis,
+                clustering_alignment_header,
+                clustering_analysis,
+                selection_header,
+                selection_analysis,
                 impact_header,
                 training_impact,
             ],
