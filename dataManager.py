@@ -78,12 +78,12 @@ class DashboardData:
             self.analysis_data, "True Labels", "Pred Labels"
         )
         self.analysis_data[
-            "Token Entropy"
+            "Token Ambiguity"
         ] = DashboardData.normalized_entropy(
             self.analysis_data, "Local Token Entropy", "Token Max Entropy"
         )  # filling 0/0 division as it generates Nan
         self.analysis_data[
-            "Word Entropy"
+            "Word Ambiguity"
         ] = DashboardData.normalized_entropy(
             self.analysis_data, "Local Word Entropy", "Word Max Entropy"
         )  # filling 0/0 division as it generates Nan
