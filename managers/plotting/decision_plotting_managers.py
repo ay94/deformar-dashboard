@@ -21,13 +21,15 @@ def create_confusion_table(errors, true_col, pred_col):
 
 class CorrelationMatrix(BaseAnalysis):
     @BaseAnalysis.handle_errors
-    def generate_matrix(self, selected_df, correlation_method):
+    def generate_matrix(self, selected_df, correlation_method, selected_columns=None):
         """
         Calculate and return correlation matrix and scatter plot for selected data.
         """
-        columns = CorrelationColumns()
-        correlation_columns = columns.get_columns(include_confidence=True)
-
+        if selected_columns:
+            correlation_columns = selected_columns
+        else:
+            columns = CorrelationColumns()
+            correlation_columns = columns.get_columns()
         try:
             # # Aggregate the DataFrame by true_labels and compute mean of each column
             # aggregated_df = (
@@ -65,7 +67,7 @@ class CorrelationMatrix(BaseAnalysis):
                 color_continuous_scale="RdBu_r",
                 font_color="#000000",
                 width=900,  # Slightly larger width for better visibility
-                height=700,
+                height=600,
             )
 
             # Generate the plot
