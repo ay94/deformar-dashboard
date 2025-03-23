@@ -7,7 +7,7 @@ from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 
 from layouts.managers.layout_managers import (get_input_trigger,
-                                              process_selection)
+                                              process_selection, generic_table, render_basic_table, render_basic_table1)
 from managers.tabs.decision_tab_mangers import DecisionTabManager
 
 
@@ -44,11 +44,12 @@ def register_callbacks(app, variants_data):
             Input("view_decision_boundary", "n_clicks"),
         ],
         [
+            State("correlation_columns", "value"),
             State("decision_correlation_coefficient", "value"),
             State("variant_selector", "value"),
         ],
     )
-    def generate_matrix(n_clicks, correlation_method, variant):
+    def generate_matrix(n_clicks, correlation_columns, correlation_method, variant):
         # Default to no update
         matrix_fig = no_update
         matrix_style = {"width": "100%", "height": "500px", "display": "none"}
@@ -57,9 +58,15 @@ def register_callbacks(app, variants_data):
         if n_clicks is not None and n_clicks > 0:
             # Calculate the initial correlation and scatter plot figures
             correlation_method = correlation_method if correlation_method else "Pearson"
+            if not correlation_columns or correlation_columns == []:
+                # Nothing selected — treat it as "select all"
+                selected_values = correlation_columns
+            else:
+                selected_values = None
             matrix_fig = tab_manager.generate_matrix(
                 variant=variant,
                 correlation_method=correlation_method,
+                selected_columns=selected_values,
             )
             matrix_style = {
                 "width": "100%",
@@ -79,7 +86,7 @@ def register_callbacks(app, variants_data):
         ],
         [
             State("variant_selector", "value"),
-            State("decision_type", "value"),
+            State("model_type", "value"),
             State("decision_columns", "value"),
         ],
     )
@@ -123,7 +130,7 @@ def register_callbacks(app, variants_data):
         ],
         [
             State("variant_selector", "value"),
-            State("decision_columns", "value"),
+            State("measure_columns", "value"),
         ],
     )
     def generate_measure_plot(
@@ -213,6 +220,45 @@ def register_callbacks(app, variants_data):
         return no_update
 
     @app.callback(
+        Output("cluster_results_container", "children"),
+        [
+            Input("variant_selector", "value"),  # Correctly using 'data' property
+        ]
+    )
+    def generate_kmeans_results(variant):
+        print("here is the variabt", variant)
+        kmeans_results = tab_manager.generate_kmeans_results(variant)
+        print(kmeans_results)
+        
+        if kmeans_results is None or kmeans_results.empty:
+            # No data selected for either case
+            return html.Div(
+                "No data KMeans results.",
+                className="prompt-message",
+            )
+        
+        
+        return render_basic_table1(kmeans_results)
+        
+    @app.callback(
+        Output("centroid_matrix_container", "children"),
+        [
+            Input("variant_selector", "value"),
+        ],
+    )
+    def generate_centroid_matrix(variant):
+        centroid_matrix = tab_manager.generate_centroid_matrix(variant)
+
+        if centroid_matrix is None:
+            return html.Div(
+                "Please select a type of results and click 'View Results' to view data.",
+                className="prompt-message",
+            )
+        return dcc.Graph(
+            figure=centroid_matrix, style={"width": "100%", "height": "100%"}
+        )
+    
+    @app.callback(
         Output("selection_tag_container", "children"),
         [
             Input("measure_store", "data"),  # Correctly using 'data' property
@@ -246,23 +292,6 @@ def register_callbacks(app, variants_data):
         if isinstance(fig, go.Figure):
             return dcc.Graph(figure=fig, style={"width": "100%", "height": "500px"})
 
-    @app.callback(
-        Output("centroid_matrix_container", "children"),
-        [
-            Input("variant_selector", "value"),
-        ],
-    )
-    def generate_centroid_matrix(variant):
-        centroid_matrix = tab_manager.generate_centroid_matrix(variant)
-
-        if centroid_matrix is None:
-            return html.Div(
-                "Please select a type of results and click 'View Results' to view data.",
-                className="prompt-message",
-            )
-        return dcc.Graph(
-            figure=centroid_matrix, style={"width": "100%", "height": "100%"}
-        )
 
     @app.callback(
         [
