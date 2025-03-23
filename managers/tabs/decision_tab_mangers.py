@@ -35,7 +35,7 @@ class DecisionTabManager(BaseTabManager):
 
         return train_analysis.generate_plot(data)
 
-    def generate_matrix(self, variant, correlation_method):
+    def generate_matrix(self, variant, correlation_method, selected_columns=None):
         """
         Calculate and return correlation matrix and scatter plot for selected data.
         """
@@ -66,7 +66,7 @@ class DecisionTabManager(BaseTabManager):
 
         correlation_analysis = CorrelationMatrix()
 
-        return correlation_analysis.generate_matrix(selected_df, coefficient)
+        return correlation_analysis.generate_matrix(selected_df, coefficient, selected_columns)
 
     def generate_decision_plot(
         self,
@@ -216,6 +216,41 @@ class DecisionTabManager(BaseTabManager):
     #         symbol_column=symbol_column,
     #     )
 
+    def generate_kmeans_results(self, variant):
+        """
+        Calculate and return centroid table.
+        """
+        tab_data = self.get_tab_data(variant)
+        if not tab_data:
+            logging.error("No data available for the selected variant.")
+            return None
+
+        selected_df = tab_data.kmeans_results
+        
+        if selected_df.empty:
+            logging.error("No relevant data available after filtering.")
+            return None
+        
+        return selected_df
+    
+    def generate_centroid_matrix(self, variant):
+        """
+        Calculate and return centroid table.
+        """
+        tab_data = self.get_tab_data(variant)
+
+        if not tab_data:
+            logging.error("No data available for the selected variant.")
+            return None
+
+        selected_df = tab_data.centroids_avg_similarity_matrix
+        if selected_df.empty:
+            logging.error("No relevant data available after filtering.")
+            return None
+        centroid_similarity = CentroidAverageSimilarity()
+        return centroid_similarity.generate_plot(selected_df)
+    
+
     def generate_tag_proportion(self, variant, selection_ids=None):
         """
         Calculate and return correlation matrix and scatter plot for selected data.
@@ -240,22 +275,6 @@ class DecisionTabManager(BaseTabManager):
 
         return selection_analysis.generate_plot(plot_data, selection_columns)
 
-    def generate_centroid_matrix(self, variant):
-        """
-        Calculate and return centroid table.
-        """
-        tab_data = self.get_tab_data(variant)
-
-        if not tab_data:
-            logging.error("No data available for the selected variant.")
-            return None
-
-        selected_df = tab_data.centroids_avg_similarity_matrix
-        if selected_df.empty:
-            logging.error("No relevant data available after filtering.")
-            return None
-        centroid_similarity = CentroidAverageSimilarity()
-        return centroid_similarity.generate_plot(selected_df)
 
     def generate_training_impact(self, variant):
         """
