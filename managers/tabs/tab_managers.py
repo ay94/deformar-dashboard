@@ -207,7 +207,7 @@ def create_correlation_matrix_plot(correlation_matrix, config: MatrixConfig):
 def create_similarity_matrix_plot(similarity_matrix, config: MatrixConfig):
     fig = px.imshow(
         similarity_matrix,
-        labels=dict(x=config.x, y=config.y, color=config.color),
+        labels=dict(x=config.x, y="Entity Tags", color=config.color),
         title=config.title,
         color_continuous_scale=config.color_continuous_scale,
         x=similarity_matrix.columns,
