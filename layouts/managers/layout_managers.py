@@ -94,6 +94,105 @@ def generate_status_table(variants_data):
     )
 
 
+def generic_table(df, page_size=10):
+    """
+    Returns a styled Dash DataTable from a pandas DataFrame.
+    
+    Parameters:
+    - df: pd.DataFrame
+    - page_size: int (default: 10)
+
+    Returns:
+    - dash_table.DataTable
+    """
+    return dash_table.DataTable(
+        data=df.to_dict("records"),
+        columns=[{"name": col, "id": col} for col in df.columns],
+        style_table={
+            "overflowX": "auto",
+            "border": "1px solid #ddd",
+        },
+        style_header={
+            "backgroundColor": "#f8f9fa",
+            "fontWeight": "bold",
+            "border": "1px solid #ccc",
+        },
+        style_cell={
+            "textAlign": "left",
+            "padding": "8px",
+            "border": "1px solid #eee",
+            "fontFamily": "Arial, sans-serif",
+            "fontSize": "14px",
+        },
+        style_data_conditional=[
+            {
+                "if": {"row_index": "odd"},
+                "backgroundColor": "#f9f9f9",
+            }
+        ],
+        page_size=page_size,
+        sort_action="native",
+        filter_action="native",
+    )
+
+def render_basic_table(df, page_size=10):
+    """
+    Render a basic Dash DataTable with a custom header color.
+    """
+    return dash_table.DataTable(
+        data=df.to_dict("records"),
+        columns=[{"name": col, "id": col} for col in df.columns],
+        style_header={
+            "backgroundColor": "#4bb3a8",  # teal-greenish color
+            "fontWeight": "bold",
+            "color": "white",
+        },
+        style_table={"overflowX": "auto"},
+        style_cell={
+            "textAlign": "left",
+            "fontFamily": "Arial, sans-serif",
+            "fontSize": "14px",
+        },
+        page_size=page_size,
+        sort_action="native",
+        filter_action="native",
+    )
+
+
+def render_basic_table1(df, page_size=10):
+    """
+    Render a clean, centered Dash DataTable with a custom header color and larger font.
+    """
+    return dash_table.DataTable(
+        data=df.to_dict("records"),
+        columns=[{"name": col, "id": col} for col in df.columns],
+        style_header={
+            "backgroundColor": "#4bb3a8",  # teal-greenish header
+            "fontWeight": "bold",
+            "color": "white",
+            "fontSize": "24px",
+            "textAlign": "center",
+        },
+        style_cell={
+            "textAlign": "center",  # Center all cell text
+            "fontSize": "20px",
+            "fontFamily": "Arial, sans-serif",
+            "padding": "8px",
+        },
+        # Explicitly center-align columns too
+        style_cell_conditional=[
+            {
+                "if": {"column_id": col},
+                "textAlign": "center",
+            } for col in df.columns
+        ],
+        style_table={"overflowX": "auto"},
+        page_size=page_size,
+        sort_action="native",
+        filter_action="native",
+    )
+
+
 class CustomButton:
     def __init__(self, label, button_id, class_name="button-common", **kwargs):
         self.label = label
@@ -105,6 +204,7 @@ class CustomButton:
         return html.Button(
             self.label, id=self.id, className=self.class_name, **self.kwargs
         )
+
 
 
 # class CustomDataTable:
