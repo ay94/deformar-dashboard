@@ -46,9 +46,8 @@ def start_app(config_manager):
     )
     tab_layouts = {
         "load": load_layout.get_layout(config_manager),
-        "dataset": dataset_layout.get_layout(config_manager),
-        "decision": decision_layout.get_layout(config_manager),
-        "performance": performance_layout.get_layout(),
+        "quantitative": dataset_layout.get_layout(config_manager),
+        "qualitative": decision_layout.get_layout(config_manager),
         "instance": instance_layout.get_layout(),
     }
 
