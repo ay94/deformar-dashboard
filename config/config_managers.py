@@ -89,11 +89,11 @@ class DashboardConfigManager:
 
     @property
     def dataset_tab(self) -> Dict:
-        return self.config.get("dashboard", {}).get("dataset_tab", {})
+        return self.config.get("dashboard", {}).get("quantitative_tab", {})
 
     @property
     def decision_tab(self) -> Dict:
-        return self.config.get("dashboard", {}).get("decision_tab", {})
+        return self.config.get("dashboard", {}).get("qualitative_tab", {})
 
 
 @dataclass
