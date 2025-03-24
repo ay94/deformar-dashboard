@@ -209,20 +209,9 @@ class DisplayColumns:
         "Global Id", "Words", "Tokens",
         "Token Selector Id", 
     ])
-    categorical_columns: list = field(default_factory=lambda: [
-        True Labels
-Pred Labels
-Agreements
-K=3
-K=4
-K=9
-Boundary Clusters
-Entity Clusters
-Token Clusters
-Error Type
+    # categorical_columns: list = field(default_factory=lambda: )
 
- 
-    ])
+
     metric_columns: list = field(default_factory=lambda: [
         "Token Ambiguity", "Word Ambiguity", "Consistency Ratio", "Inconsistency Ratio",
         "Tokenization Rate", "Token Confidence", "Loss Values", "Prediction Uncertainty",
@@ -233,6 +222,16 @@ Error Type
         if include_meta:
             return self.meta_columns + self.metric_columns
         return self.metric_columns
+    
+    @staticmethod
+    def get_categorical():
+        return [
+        'Pred Labels',
+        'Agreements', 'Error Type', 
+        'K=3', 'K=4', 'K=9',
+        'Boundary Clusters', 'Entity Clusters', 'Token Clusters',
+        'True Aligned Scheme', 'Pred Aligned Scheme', 
+    ]
     
     def get_summary_view(self, include_meta=False):
         summary = self.metric_columns[:5]

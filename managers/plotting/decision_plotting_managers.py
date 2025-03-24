@@ -210,17 +210,23 @@ class MeasureScatter(BasePlotting):
         
 class SelectionTagProportion(BaseAnalysis):
     @BaseAnalysis.handle_errors
-    def generate_plot(self, df, columns):
-
+    def generate_plot(self, df, columns, category):
+        
+        x_column = category if category else columns.PRED_LABELS.value
         confusion_table = create_confusion_table(
-            df, columns.TRUE_LABELS.value, columns.PRED_LABELS.value
+            df, columns.TRUE_LABELS.value, x_column
         )
+        # confusion_table = create_confusion_table(
+        #     df, columns.TRUE_LABELS.value, columns.PRED_LABELS.value
+        # )
         color_map = ColorMap()
         selection_tag_proportion = create_bar_chart(
             data=confusion_table,
-            title="Selection Tag Proportion",
-            color_column=columns.PRED_LABELS.value,
-            xaxis_title=columns.PRED_LABELS.value,
+            title=f"Selection Tag Proportion for {x_column}",
+            # color_column=columns.PRED_LABELS.value,
+            # xaxis_title=columns.PRED_LABELS.value,
+            color_column=x_column,
+            xaxis_title=x_column,
             yaxis_title=columns.TRUE_LABELS.value,
             width=700,
             height=700,

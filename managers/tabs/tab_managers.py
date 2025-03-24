@@ -289,7 +289,7 @@ def create_bar_chart(
         height=height,
     )
     # Update the traces to set bar colors and borders
-    fig.update_traces(marker=dict(line=dict(width=1.5, color="#FF7F7F")))
+    # fig.update_traces(marker=dict(line=dict(width=1.5, color="#FF7F7F")))
 
     return fig
 

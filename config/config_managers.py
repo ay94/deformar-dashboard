@@ -227,36 +227,54 @@ class ColorMap:
             "O": "saddlebrown",
             "LOC": "darkgreen",
             "PERS": "deepskyblue",
+            "PER": "deepskyblue",
             "ORG": "darkcyan",
             "MISC": "palevioletred",
-            "NOUN": "darkgreen",
-            "VERB": "deepskyblue",
-            "PN": "darkcyan",
-            "PRT": "yellowgreen",
-            "ADJ": "lightblue",
-            "ADV": "cyan",
-            "PRON": "saddlebrown",
-            "DSIL": "violet",
-            "CCONJ": "turquoise",
-            "ADP": "darksalmon",
-            "PUNCT": "tomato",
-            "DET": "midnightblue",
-            "X": "olive",
-            "AUX": "limegreen",
-            "NUM": "slateblue",
-            "PART": "wheat",
-            "SYM": "firebrick",
-            "PROPN": "gold",
-            "INTJ": "lightseagreen",
             "IGNORED": "grey",
             "[CLS]": "grey",  # Explicitly handle CLS
             "[SEP]": "grey",  # Explicitly handle SEP
             "SELECTED": "black",
-            "No Errors": "darkgreen",
-            "Exclusion": "deepskyblue",
-            "Type": "deepskyblue",
-            "Chunk": "darkcyan",
-            "Type and Chunk": "palevioletred",
+            "No Errors": "darkgreen",         
+            "Exclusion": "mediumturquoise",   
+            "Type": "deepskyblue",            
+            "Chunk": "darkcyan",              
+            "Type and Chunk": "palevioletred", 
+            "cluster-0": "indianred",         # softened red
+            "cluster-1": "lightsalmon",       # soft orange
+            "cluster-2": "moccasin",          # warm light beige
+            "cluster-3": "mediumseagreen",    # muted green
+            "cluster-4": "teal",              # keep (already softer)
+            "cluster-5": "cornflowerblue",    # softened blue
+            "cluster-6": "mediumorchid",      # softened purple
+            "cluster-7": "lightsteelblue",    # pastel lavender-blue
+            "cluster-8": "sienna",            # warm brown
+            "B": "royalblue",    # Beginning of a chunk
+            "I": "lightcoral",   # Inside a chunk
+            "TP": "#636EFA",   # soft indigo/periwinkle
+            "FP": "#EF553B",   # coral red
+            "FN": "#00CC96",   # teal green
+            "TN": "#FFB74D",     # soft orange
+            True: "mediumseagreen",   # Positive / aligned / active
+            False: "lightcoral",      # Negative / not aligned / inactive
+             # "NOUN": "darkgreen",
+            # "VERB": "deepskyblue",
+            # "PN": "darkcyan",
+            # "PRT": "yellowgreen",
+            # "ADJ": "lightblue",
+            # "ADV": "cyan",
+            # "PRON": "saddlebrown",
+            # "DSIL": "violet",
+            # "CCONJ": "turquoise",
+            # "ADP": "darksalmon",
+            # "PUNCT": "tomato",
+            # "DET": "midnightblue",
+            # "X": "olive",
+            # "AUX": "limegreen",
+            # "NUM": "slateblue",
+            # "PART": "wheat",
+            # "SYM": "firebrick",
+            # "PROPN": "gold",
+            # "INTJ": "lightseagreen",
         }
     )
 

@@ -368,24 +368,6 @@ def register_callbacks(app, variants_data):
         
         return render_basic_table_with_font(kmeans_results)
     
-    @app.callback(
-        Output("selection_tag_summary", "children"),
-        [
-            Input("variant_selector", "value"),  # Correctly using 'data' property
-        ]
-    )
-    def generate_selection_summary(variant):
-        kmeans_results = tab_manager.generate_kmeans_results(variant)
-        
-        if kmeans_results is None or kmeans_results.empty:
-            # No data selected for either case
-            return html.Div(
-                "No data KMeans results.",
-                className="prompt-message",
-            )
-        
-        
-        return render_basic_table_with_font(kmeans_results)
         
     @app.callback(
         Output("centroid_matrix_container", "children"),
@@ -404,18 +386,79 @@ def register_callbacks(app, variants_data):
         return dcc.Graph(
             figure=centroid_matrix, style={"width": "100%", "height": "100%"}
         )
+     
+    @app.callback(
+        [
+            Output("selection_summary_container", "children"),
+            Output("selection_numeric_summary_container", "children"),
+        ],
+        [
+            Input("measure_store", "data"),  # Correctly using 'data' property
+            Input("decision_store", "data"),
+            Input("selection_summary_column", "value"),  # Correctly using 'data' property
+        ],
+        [
+            State("variant_selector", "value"),
+        ]
+    )
+    def generate_selection_summary(measureSelection, decisionSelection, column, variant):
+         # Convert selections to lists of IDs
+        measure_selection_ids = process_selection(measureSelection)
+        decision_selection_ids = process_selection(decisionSelection)
+
+        # Determine which selection IDs to use
+        if decision_selection_ids:  # Use decision selection if available
+            selection_ids = decision_selection_ids
+        elif measure_selection_ids:  # Fallback to measure selection
+            selection_ids = measure_selection_ids
+        else:
+            # No data selected for either case
+            msg = html.Div(
+                "No data selected from measure or decision plots.",
+                className="prompt-message",
+            )
+            return [msg, msg]  # ✅ Correct: returns 2 outputs as a list
+            
+        summary = tab_manager.generate_selection_summary(variant=variant, category=column, selection_ids=selection_ids)
+            
+        if summary is None or column is None:
+            # No data selected for either case
+            msg = html.Div(
+                    "No summary available please choose category.",
+                    className="prompt-message",
+                )
+            return [msg, msg]  # ✅ Correct: returns 2 outputs as a list
+        # return [
+        #     render_basic_table_with_font(summary["categorical_summary"]),
+        #     render_basic_table_with_font(summary["numeric_summary"]),
+        #     ]
+        return [
+            html.Div([
+                html.H5("Categorical Summary"),
+                render_basic_table_with_font(summary["categorical_summary"]),
+            ]),
+            html.Div([
+                html.Hr(),
+                html.H5("Metric Summary"),
+                render_basic_table_with_font(summary["numeric_summary"]),
+            ], style={"marginTop": "30px"}),
+        ]
+
+   
+    
     
     @app.callback(
         Output("selection_tag_container", "children"),
         [
             Input("measure_store", "data"),  # Correctly using 'data' property
             Input("decision_store", "data"),
+            Input("selection_tag_column", "value"),  # Correctly using 'data' property
         ],
         [
             State("variant_selector", "value"),
         ],
     )
-    def generate_selection_output(measureSelection, decisionSelection, variant):
+    def generate_selection_output(measureSelection, decisionSelection, column, variant):
         # Convert selections to lists of IDs
         measure_selection_ids = process_selection(measureSelection)
         decision_selection_ids = process_selection(decisionSelection)
@@ -434,7 +477,7 @@ def register_callbacks(app, variants_data):
 
         # Generate the plot or figure
         fig = tab_manager.generate_tag_proportion(
-            variant=variant, selection_ids=selection_ids
+            variant=variant, column=column, selection_ids=selection_ids
         )
         if isinstance(fig, go.Figure):
             return dcc.Graph(figure=fig, style={"width": "100%", "height": "500px"})

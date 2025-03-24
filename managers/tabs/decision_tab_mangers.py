@@ -1,6 +1,7 @@
 import logging
 
 import numpy as np
+import pandas as pd
 
 from config.enums import (CorrelationCoefficients, DecisionType,
                           DisplayColumns,
@@ -387,13 +388,14 @@ class DecisionTabManager(BaseTabManager):
         centroid_similarity = CentroidAverageSimilarity()
         return centroid_similarity.generate_plot(selected_df)
     
-    def generate_selection_summary(self, variant, selection_ids=None):
+    def generate_selection_summary(self, variant, category, selection_ids=None):
         """
         Calculate and return centroid table.
         """
+        if category is None:
+            category = 'Pred Labels'
         tab_data = self.get_tab_data(variant)
         plot_data = None
-
         if not tab_data:
             logging.error("No data available for the selected variant.")
             return None
@@ -406,13 +408,24 @@ class DecisionTabManager(BaseTabManager):
             plot_data = selected_df[selected_df["Global Id"].isin(selection_ids)]
             logging.info("Selected points are filtered and modified.")
 
-        selection_columns = SelectionPlotColumns
-        selection_analysis = SelectionTagProportion()
+        if category not in selected_df.columns:
+            logging.error(f"Column '{category}' not found in the dataset.")
+            return None
+        
+        # Numeric summary (describe on metric columns)
+        metric_columns = DisplayColumns().metric_columns
+        numeric_df = plot_data[metric_columns].select_dtypes(include="number")
+        summary_df = numeric_df.describe().T.round(2)
+        summary_df.insert(0, "Metric", summary_df.index)  # 👈 Adds a visible column name
+        summary_df.reset_index(drop=True, inplace=True)   # Optional: clean index
 
-        return selection_analysis.generate_plot(plot_data, selection_columns)
-    
+        return {
+            "categorical_summary": DecisionTabManager.custom_summary(plot_data, category),
+            "numeric_summary": summary_df
+        }
 
-    def generate_tag_proportion(self, variant, selection_ids=None):
+
+    def generate_tag_proportion(self, variant, column, selection_ids=None):
         """
         Calculate and return correlation matrix and scatter plot for selected data.
         """
@@ -434,7 +447,7 @@ class DecisionTabManager(BaseTabManager):
         selection_columns = SelectionPlotColumns
         selection_analysis = SelectionTagProportion()
 
-        return selection_analysis.generate_plot(plot_data, selection_columns)
+        return selection_analysis.generate_plot(plot_data, selection_columns, column)
 
 
     def generate_training_impact(self, variant):
@@ -458,3 +471,24 @@ class DecisionTabManager(BaseTabManager):
             logging.error("No Training Impact Available.")
             return None, None
         return attention_matrices, attention_weights
+    
+    @staticmethod
+    def custom_summary(df, col):
+        counts = df[col].value_counts()
+        percents = df[col].value_counts(normalize=True) * 100
+
+        summary_df = pd.DataFrame({
+            'Label': counts.index.astype(str),
+            'Count': counts.values,
+            'Percent': percents.map(lambda x: f"{x:.2f}%")
+        })
+
+        # Add total row
+        total_count = counts.sum()
+        summary_df.loc[len(summary_df.index)] = {
+            'Label': 'Total',
+            'Count': total_count,
+            'Percent': '100.00%'
+        }
+
+        return summary_df

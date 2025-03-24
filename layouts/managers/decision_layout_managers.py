@@ -6,6 +6,9 @@ from layouts.managers.layout_managers import (CustomButton, LoadingContainer,
                                               SectionContainer, VariantSection,
                                               FilterLayerSection,
                                               generate_dropdown_options)
+from config.enums import (CorrelationCoefficients, DecisionType,
+                          DisplayColumns,
+                          SelectionPlotColumns)
 
 from dash import dash_table
 class FilterLayer:
@@ -161,8 +164,8 @@ class DecisionSection:
             "Decision Boundary Analysis",
             [
                 self.model_type_dropdown,
-                self.decision_columns_dropdown,
                 self.measure_columns_dropdown,
+                self.decision_columns_dropdown,
                 self.correlation_columns_dropdown,
                 self.decision_correlation_type_dropdown,
                 self.plot_button,  # Include the message
@@ -336,10 +339,11 @@ class DecisionTabLayout:
                         dbc.Col(
                             [
                                 dcc.Dropdown(
-                                        id="selection_summary_column",
+                                        id="selection_tag_column",
                                         multi=False,
                                         placeholder="Select Category...",
-                                        options=[],  # Assuming you have a function to generate options
+                                        options=DisplayColumns.get_categorical(),
+                                        # [],  # Assuming you have a function to generate options
                                         style={
                                             "width": "100%"
                                         },  # Assuming you want to use the full width for styling
@@ -355,6 +359,7 @@ class DecisionTabLayout:
                                             "overflow": "visible",
                                         },  # Use dynamic height and ensure overflow is visible
                                     ),
+                                    style={"marginTop": "30px"},  # 👈 add space between dropdown and content
                                 ),
                             ],
                             width=6,
@@ -366,7 +371,8 @@ class DecisionTabLayout:
                                     id="selection_summary_column",
                                     multi=False,
                                     placeholder="Select Category...",
-                                    options=[],  # Assuming you have a function to generate options
+                                    options=DisplayColumns.get_categorical(),
+                                    # [],  # Assuming you have a function to generate options
                                     style={
                                         "width": "100%"
                                     },  # Assuming you want to use the full width for styling
@@ -374,14 +380,25 @@ class DecisionTabLayout:
                                 dcc.Loading(
                                     id="loading_selection_summary",
                                     type="default",
-                                    children=html.Div(
-                                        id="selection_tag_summary",
-                                        style={
-                                            "width": "100%",
-                                            "height": "auto",
-                                            "overflow": "visible",
-                                        },  # Use dynamic height and ensure overflow is visible
-                                    ),
+                                    children=[
+                                        html.Div(
+                                            id="selection_summary_container",
+                                            style={
+                                                "width": "100%",
+                                                "height": "auto",
+                                                "overflow": "visible",
+                                            },  # Use dynamic height and ensure overflow is visible
+                                        ),  
+                                        html.Div(
+                                            id="selection_numeric_summary_container",
+                                            style={
+                                                "width": "100%",
+                                                "height": "auto",
+                                                "overflow": "visible",
+                                            },  # Use dynamic height and ensure overflow is visible
+                                        ),  
+                                    ],
+                                    style={"marginTop": "30px"},  # 👈 add space between dropdown and content
                                 ),
                             ],
                             width=6,
