@@ -164,7 +164,7 @@ class DatasetTabLayout:
             config_manager.variants
         )  # You might want to use config settings if applicable
         self.dataset_tab_config = (
-            config_manager.dataset_tab
+            config_manager.quantitative
         )  # You might want to use config settings if applicable
 
     def render(self):

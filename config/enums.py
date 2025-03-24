@@ -1,4 +1,6 @@
 import logging
+from dataclasses import dataclass, field
+
 from enum import Enum
 from dataclasses import dataclass, field
 
@@ -197,6 +199,45 @@ class CorrelationColumns:
         return cols
 
 
+@dataclass
+class DisplayColumns:
+    # meta_columns: list = field(default_factory=lambda: [
+    #     "Sentence Ids", "Token Positions", "Words", "Tokens",
+    #     "Word Pieces", "Core Tokens", "Token Selector Id", "Token Ids", "Global Id"
+    # ])
+    meta_columns: list = field(default_factory=lambda: [
+        "Global Id", "Words", "Tokens",
+        "Token Selector Id", 
+    ])
+    categorical_columns: list = field(default_factory=lambda: [
+        True Labels
+Pred Labels
+Agreements
+K=3
+K=4
+K=9
+Boundary Clusters
+Entity Clusters
+Token Clusters
+Error Type
+
+ 
+    ])
+    metric_columns: list = field(default_factory=lambda: [
+        "Token Ambiguity", "Word Ambiguity", "Consistency Ratio", "Inconsistency Ratio",
+        "Tokenization Rate", "Token Confidence", "Loss Values", "Prediction Uncertainty",
+        "True Silhouette", "Pred Silhouette"
+    ])
+
+    def get_columns(self, include_meta=True):
+        if include_meta:
+            return self.meta_columns + self.metric_columns
+        return self.metric_columns
+    
+    def get_summary_view(self, include_meta=False):
+        summary = self.metric_columns[:5]
+        return self.meta_columns + summary if include_meta else summary
+
 
 # class ColorMap(Enum):
 #     B_LOC = 'darkgreen'
@@ -247,6 +288,7 @@ class HoverColumns(Enum):
     CORE_TOKENS = "Core Tokens"
     TRUE_LABELS = "True Labels"
     TOKEN_SELECTOR_ID = "Token Selector Id"
+    TOKEN_CONFIDENCE = "Token Confidence"
     PRED_LABELS = "Pred Labels"
     AGREEMENTS = "Agreements"
     ERROR_TYPE = "Error Type"
@@ -281,3 +323,21 @@ class TrainColumns(Enum):
         """
         # If you need to exclude specific items, you can do so with a condition
         return [col.value for col in TrainColumns]
+    
+
+class TrainColumns(Enum):
+    X_COLUMN = "X"
+    Y_COLUMN = "Y"
+    LOSSES = "Losses"
+    GLOBAL_ID = "Global Id"
+    TRUE_LABELS = "True Labels"
+
+    @staticmethod
+    def list_columns():
+        """
+        Returns a list of all column names for use in selections or other operations,
+        excluding specific items if necessary.
+        """
+        # If you need to exclude specific items, you can do so with a condition
+        return [col.value for col in TrainColumns]
+

@@ -159,7 +159,7 @@ def render_basic_table(df, page_size=10):
     )
 
 
-def render_basic_table1(df, page_size=10):
+def render_basic_table_with_font(df, page_size=10):
     """
     Render a clean, centered Dash DataTable with a custom header color and larger font.
     """
@@ -170,12 +170,12 @@ def render_basic_table1(df, page_size=10):
             "backgroundColor": "#4bb3a8",  # teal-greenish header
             "fontWeight": "bold",
             "color": "white",
-            "fontSize": "24px",
+            "fontSize": "20px",
             "textAlign": "center",
         },
         style_cell={
             "textAlign": "center",  # Center all cell text
-            "fontSize": "20px",
+            "fontSize": "16px",
             "fontFamily": "Arial, sans-serif",
             "padding": "8px",
         },
@@ -318,7 +318,71 @@ class DropdownContainer:
                 )
             ],
         )
+        
+class FilterLayerSection:
+    def __init__(self, header_text, content_components):
+        self.header_text = header_text
+        self.content_components = content_components
 
+    def render(self):
+        return html.Div(
+            className="filter-layer-section",
+            style={
+                "display": "flex",
+                "flexDirection": "column",
+                "alignItems": "center",
+                "justifyContent": "center",
+                "margin": "30px 0",
+            },
+            children=[
+                html.H2(
+                    self.header_text,
+                    className="section-header",
+                    style={"textAlign": "center"},
+                ),
+                html.Div(
+                    children=self.content_components,
+                    style={
+                        "display": "flex",
+                        "justifyContent": "center",
+                        "alignItems": "center",
+                        "gap": "10px",
+                        "flexWrap": "wrap",
+                        "marginTop": "15px",
+                    },
+                ),
+            ],
+        )
+
+
+
+def create_filter_datatable(table_id, columns=[], data=[]):
+    return dash_table.DataTable(
+        id=table_id,
+        columns=columns,
+        data=data,
+        page_size=10,
+        style_table={
+            "overflowX": "auto",
+            "border": "1px solid #ccc",
+        },
+        style_header={
+            "backgroundColor": "#4bb3a8",
+            "color": "white",
+            "fontWeight": "bold",
+            "textAlign": "center",
+            "border": "1px solid #ccc",
+        },
+        style_cell={
+            "textAlign": "center",
+            "padding": "8px",
+            "fontSize": "14px",
+            "whiteSpace": "normal",
+            "border": "1px solid #ccc",
+        },
+        filter_action="native",
+        sort_action="native",
+    )
 
 class SectionContainer:
     def __init__(self, header_text, content_components):

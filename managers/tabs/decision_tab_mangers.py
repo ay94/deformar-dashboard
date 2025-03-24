@@ -3,6 +3,7 @@ import logging
 import numpy as np
 
 from config.enums import (CorrelationCoefficients, DecisionType,
+                          DisplayColumns,
                           SelectionPlotColumns)
 from managers.plotting.decision_plotting_managers import (
     CentroidAverageSimilarity, CorrelationMatrix, DecisionScatter,
@@ -34,6 +35,28 @@ class DecisionTabManager(BaseTabManager):
         train_analysis = TrainScatter()
 
         return train_analysis.generate_plot(data)
+
+    def get_filtered_analysis_data(self, variant, selected_column=None, selected_value=None):
+        tab_data = self.get_tab_data(variant)
+
+        if not tab_data or tab_data.analysis_data.empty:
+            return None
+
+        df = tab_data.analysis_data.copy()
+        display_cols = DisplayColumns().get_columns()
+        display_cols = [col for col in display_cols if col in df.columns]
+
+        if selected_column and selected_value:
+            try:
+                values = selected_value.split() if isinstance(selected_value, str) else [selected_value]
+                df = df[df[selected_column].isin(values)]
+            except Exception:
+                return None
+
+        df = df[display_cols].round(3)
+        df = df.rename(columns={"Global Id": "id"})  # ✅ renames in place
+        return df
+
 
     def generate_matrix(self, variant, correlation_method, selected_columns=None):
         """
@@ -67,6 +90,31 @@ class DecisionTabManager(BaseTabManager):
         correlation_analysis = CorrelationMatrix()
 
         return correlation_analysis.generate_matrix(selected_df, coefficient, selected_columns)
+    
+    def generate_matrix_from_df(self, df, correlation_method, selected_columns=None):
+        if df.empty:
+            return None
+
+        correlation_analysis = CorrelationMatrix()
+        try:
+            coefficient_type_enum = CorrelationCoefficients(correlation_method)
+        except ValueError:
+            logging.error("Invalid coefficient selected.")
+            return None
+
+        if coefficient_type_enum == CorrelationCoefficients.PEARSON:
+            coefficient = "pearson"
+        elif coefficient_type_enum == CorrelationCoefficients.SPEARMAN:
+            coefficient = "spearman"
+        else:
+            logging.error("Unknown coefficient.")
+            return None
+
+        return correlation_analysis.generate_matrix(
+            selected_df=df,
+            correlation_method=coefficient,
+            selected_columns=selected_columns,
+        )
 
     def generate_decision_plot(
         self,
@@ -131,6 +179,7 @@ class DecisionTabManager(BaseTabManager):
     def generate_measure_plot(
         self,
         variant,
+        model_type,
         x_column,
         y_column,
         color_column,
@@ -162,6 +211,23 @@ class DecisionTabManager(BaseTabManager):
 
         if not color_column:
             logging.error("Please select color column.")
+        
+        if model_type is not None:
+            try:
+                model_type_enum = DecisionType(model_type)
+            except ValueError:
+                logging.error("Invalid decision type selected.")
+                return None
+
+            if model_type_enum == DecisionType.FINETUNED:
+                x_column = "X"
+                y_column = "Y"
+            elif model_type_enum == DecisionType.PRETRAINED:
+                x_column = "Pre X"
+                y_column = "Pre Y"
+            else:
+                logging.error("Unknown Model.")
+                return None
 
         measure_analysis = MeasureScatter()
 
@@ -172,6 +238,75 @@ class DecisionTabManager(BaseTabManager):
             color_column=color,
             symbol_column=symbol_column,
         )
+    
+    def generate_measure_plot_from_ids(
+        self,
+        ids,
+        variant,
+        model_type,
+        x_column,
+        y_column,
+        color_column,
+        symbol_column=None,
+        selection_ids=None,
+    ):
+        
+        tab_data = self.get_tab_data(variant)
+        if not tab_data:
+            logging.error("No data available for the selected variant.")
+            return None
+        color = color_column
+        selected_df = self.filter_ignored(tab_data.analysis_data)
+        if selected_df.empty:
+            logging.error("No relevant data available after filtering.")
+            return None
+        
+        filtered_row_ids = [r for r in ids if r is not None]
+        selected_df = selected_df[selected_df['Global Id'].isin(filtered_row_ids)]
+        if selected_df.empty:
+            logging.error("No relevant data available after filtering.")
+            return None
+        
+
+        if selection_ids:
+            color = "color"
+            selected_df[color] = np.where(
+                selected_df["Global Id"].isin(selection_ids),
+                "SELECTED",
+                selected_df[color_column],
+            )
+
+        if not color_column:
+            logging.error("Please select a color column.")
+            return None
+
+        if model_type is not None:
+            try:
+                model_type_enum = DecisionType(model_type)
+            except ValueError:
+                logging.error("Invalid decision type selected.")
+                return None
+
+            if model_type_enum == DecisionType.FINETUNED:
+                x_column = "X"
+                y_column = "Y"
+            elif model_type_enum == DecisionType.PRETRAINED:
+                x_column = "Pre X"
+                y_column = "Pre Y"
+            else:
+                logging.error("Unknown Model.")
+                return None
+
+        measure_analysis = MeasureScatter()
+
+        return measure_analysis.generate_plot(
+            selected_df,
+            x_column=x_column,
+            y_column=y_column,
+            color_column=color,
+            symbol_column=symbol_column,
+        )
+
 
     # def generate_selection_data_table(
     #     self,
@@ -233,6 +368,8 @@ class DecisionTabManager(BaseTabManager):
         
         return selected_df
     
+    
+    
     def generate_centroid_matrix(self, variant):
         """
         Calculate and return centroid table.
@@ -249,6 +386,30 @@ class DecisionTabManager(BaseTabManager):
             return None
         centroid_similarity = CentroidAverageSimilarity()
         return centroid_similarity.generate_plot(selected_df)
+    
+    def generate_selection_summary(self, variant, selection_ids=None):
+        """
+        Calculate and return centroid table.
+        """
+        tab_data = self.get_tab_data(variant)
+        plot_data = None
+
+        if not tab_data:
+            logging.error("No data available for the selected variant.")
+            return None
+
+        selected_df = self.filter_ignored(tab_data.analysis_data)
+        if selected_df.empty:
+            logging.error("No relevant data available after filtering.")
+            return None
+        if selection_ids:
+            plot_data = selected_df[selected_df["Global Id"].isin(selection_ids)]
+            logging.info("Selected points are filtered and modified.")
+
+        selection_columns = SelectionPlotColumns
+        selection_analysis = SelectionTagProportion()
+
+        return selection_analysis.generate_plot(plot_data, selection_columns)
     
 
     def generate_tag_proportion(self, variant, selection_ids=None):

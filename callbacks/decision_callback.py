@@ -1,5 +1,5 @@
 import json
-
+import pandas as pd
 import dash
 import plotly.graph_objs as go
 from dash import dcc, html, no_update
@@ -7,9 +7,14 @@ from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 
 from layouts.managers.layout_managers import (get_input_trigger,
-                                              process_selection, generic_table, render_basic_table, render_basic_table1)
+                                              process_selection, render_basic_table_with_font)
 from managers.tabs.decision_tab_mangers import DecisionTabManager
-
+DISPLAY_COLUMNS = [
+        "Global Id", "Sentence Ids", "Words", "Tokens", "Token Selector Id",  
+        "Token Ambiguity", "Word Ambiguity", "Consistency Ratio",
+        "Inconsistency Ratio", "Tokenization Rate", "Token Confidence",
+        "Loss Values", "Prediction Uncertainty", "True Silhouette", "Pred Silhouette",
+    ]
 
 def register_callbacks(app, variants_data):
     tab_manager = DecisionTabManager(variants_data)
@@ -34,6 +39,102 @@ def register_callbacks(app, variants_data):
                 className="prompt-message",
             )
         return dcc.Graph(figure=fig)
+    
+    @app.callback(
+        Output("filter_value_dropdown", "options"),
+        Input("filter_column_dropdown", "value"),
+        State("variant_selector", "value"),  # or whatever triggers data context
+    )
+    def update_filter_value_options(selected_column, variant):
+        if not selected_column or not variant:
+            return []
+
+        tab_data = tab_manager.get_tab_data(variant)
+        if not tab_data or tab_data.analysis_data.empty:
+            return []
+
+        df = tab_data.analysis_data  # or whatever your main df is
+        unique_values = df[selected_column].dropna().unique()
+
+        # Convert to dropdown options
+        return [{"label": str(val), "value": val} for val in sorted(unique_values)]
+    
+    @app.callback(
+        [
+            Output("filtered_data_table", "data"),
+            Output("filtered_data_table", "columns"),
+            Output("filter_column_dropdown", "value"),
+            Output("filter_value_dropdown", "value"),
+        ],
+        [
+            Input("variant_selector", "value"),
+            Input("filter_table_button", "n_clicks"),
+            Input("reset_filter_button", "n_clicks"),
+        ],
+        [
+            State("filter_column_dropdown", "value"),
+            State("filter_value_dropdown", "value"),
+        ],
+    )
+    def update_filtered_table(variant_value, filter_clicks, reset_clicks, selected_column, selected_value):
+        ctx = dash.callback_context
+        trigger_id = get_input_trigger(ctx)
+        # Apply filter
+        if trigger_id == "filter_table_button":
+            if not selected_column or not selected_value:
+                raise dash.exceptions.PreventUpdate
+
+            df = tab_manager.get_filtered_analysis_data(variant_value, selected_column, selected_value)
+            if df is None or df.empty:
+                return [], [], no_update, no_update
+
+            return (
+                df.to_dict("records"),
+                [{"name": col, "id": col} for col in df.columns],
+                no_update,
+                no_update,
+            )
+
+        # Reset: full table, clear dropdowns
+        elif trigger_id == "reset_filter_button":
+            df = tab_manager.get_filtered_analysis_data(variant_value)
+            if df is None or df.empty:
+                return [], [], None, None
+
+            return (
+                df.to_dict("records"),
+                [{"name": col, "id": col} for col in df.columns],
+                None,
+                None,
+            )
+
+        df = tab_manager.get_filtered_analysis_data(variant_value)
+        return (
+            df.to_dict("records"),
+            [{"name": col, "id": col} for col in df.columns],
+            no_update,
+            no_update,
+        )
+
+    @app.callback(
+        Output("filter_state", "data"),
+        Input("filtered_data_table", "derived_virtual_data"),
+        prevent_initial_call=True
+    )
+    def detect_manual_table_filtering(filtered_data):
+        ctx = dash.callback_context
+        trigger = get_input_trigger(ctx)
+        # Only treat it as a manual filter if it was triggered by the table
+        if trigger != "filtered_data_table":
+            raise PreventUpdate
+        if filtered_data is None or len(filtered_data) == 0:
+            return {"filtered": False}
+        
+        # If all rows have valid IDs, we assume it’s filtered
+        is_filtered = all("id" in row and row["id"] is not None for row in filtered_data)
+        return {"filtered": is_filtered}
+
+
 
     @app.callback(
         [
@@ -42,6 +143,7 @@ def register_callbacks(app, variants_data):
         ],
         [
             Input("view_decision_boundary", "n_clicks"),
+            Input("filtered_data_table", "derived_virtual_data"),  # 👈 new input
         ],
         [
             State("correlation_columns", "value"),
@@ -49,7 +151,7 @@ def register_callbacks(app, variants_data):
             State("variant_selector", "value"),
         ],
     )
-    def generate_matrix(n_clicks, correlation_columns, correlation_method, variant):
+    def generate_matrix(n_clicks, filtered_rows, correlation_columns, correlation_method, variant):
         # Default to no update
         matrix_fig = no_update
         matrix_style = {"width": "100%", "height": "500px", "display": "none"}
@@ -58,21 +160,24 @@ def register_callbacks(app, variants_data):
         if n_clicks is not None and n_clicks > 0:
             # Calculate the initial correlation and scatter plot figures
             correlation_method = correlation_method if correlation_method else "Pearson"
-            if not correlation_columns or correlation_columns == []:
-                # Nothing selected — treat it as "select all"
-                selected_values = correlation_columns
+            selected_values = correlation_columns if correlation_columns else None
+            if filtered_rows:
+                # Convert the filtered rows back into a DataFrame
+                
+                df = pd.DataFrame(filtered_rows)
+                matrix_fig = tab_manager.generate_matrix_from_df(
+                    df=df,
+                    correlation_method=correlation_method,
+                    selected_columns=selected_values,
+                )
             else:
-                selected_values = None
-            matrix_fig = tab_manager.generate_matrix(
+                matrix_fig = tab_manager.generate_matrix(
                 variant=variant,
                 correlation_method=correlation_method,
                 selected_columns=selected_values,
             )
-            matrix_style = {
-                "width": "100%",
-                "height": "500px",
-                "display": "inline-block",
-            }
+
+            matrix_style["display"] = "inline-block"
         if matrix_fig is None:
             matrix_fig = {}  # Ensure a valid empty dictionary if None is returned
         # Return figures and styles
@@ -91,7 +196,7 @@ def register_callbacks(app, variants_data):
         ],
     )
     def generate_decision_plot(
-        n_clicks, measureSelection, variant, decision_type, color_columns
+        n_clicks, measureSelection, variant, model_type, color_columns
     ):
 
         fig = no_update
@@ -99,7 +204,7 @@ def register_callbacks(app, variants_data):
 
         if n_clicks is not None and n_clicks > 0:
 
-            decision_type = decision_type if decision_type else "Fine Tuned Model"
+            model_type = model_type if model_type else "Fine Tuned Model"
             color_column = "True Labels"
             symbol_column = None
             selection_ids = None
@@ -110,7 +215,7 @@ def register_callbacks(app, variants_data):
             selection_ids = process_selection(measureSelection)
             fig = tab_manager.generate_decision_plot(
                 variant=variant,
-                decision_type=decision_type,
+                decision_type=model_type,
                 color_column=color_column,
                 symbol_column=symbol_column,
                 selection_ids=selection_ids,
@@ -127,20 +232,24 @@ def register_callbacks(app, variants_data):
             Input("view_decision_boundary", "n_clicks"),
             Input("correlation_heatmap", "clickData"),
             Input("decision_store", "data"),
+            Input("filtered_data_table", "derived_virtual_data"),  # new input
+            Input("filter_state", "data"),
         ],
         [
             State("variant_selector", "value"),
             State("measure_columns", "value"),
+            State("model_type", "value"),
         ],
     )
     def generate_measure_plot(
-        n_clicks, clickData, decisionSelection, variant, color_columns
+        n_clicks, clickData, decisionSelection, filtered_rows, filter_state, variant, color_columns, model_type
     ):
         if n_clicks is None or n_clicks == 0:
             return no_update, {"width": "100%", "height": "500px", "display": "none"}
 
         style = {"width": "100%", "height": "500px", "display": "inline-block"}
         color_column = color_columns[0] if color_columns else "True Labels"
+        
         symbol_column = (
             color_columns[1] if color_columns and len(color_columns) > 1 else None
         )
@@ -154,14 +263,35 @@ def register_callbacks(app, variants_data):
 
         selection_ids = process_selection(decisionSelection)
 
-        fig = tab_manager.generate_measure_plot(
-            variant=variant,
-            x_column=x_column,
-            y_column=y_column,
-            color_column=color_column,
-            symbol_column=symbol_column,
-            selection_ids=selection_ids,
-        )
+        # Use filtered table data if available
+        is_filtered = filtered_rows and any("id" in row and row["id"] is not None for row in filtered_rows)
+
+       
+        if filter_state.get("filtered"):
+            print('Yes I am filtered')
+            filtered_row_ids = [row["id"] for row in filtered_rows if "id" in row]
+            fig = tab_manager.generate_measure_plot_from_ids(
+                ids=filtered_row_ids,
+                variant=variant,
+                model_type=model_type,
+                x_column=x_column,
+                y_column=y_column,
+                color_column=color_column,
+                symbol_column=symbol_column,
+                selection_ids=selection_ids,
+            )
+        else:
+            # Fallback to full variant
+            print('I am very full')
+            fig = tab_manager.generate_measure_plot(
+                variant=variant,
+                model_type=model_type,
+                x_column=x_column,
+                y_column=y_column,
+                color_column=color_column,
+                symbol_column=symbol_column,
+                selection_ids=selection_ids,
+            )
 
         return fig, style
 
@@ -226,9 +356,7 @@ def register_callbacks(app, variants_data):
         ]
     )
     def generate_kmeans_results(variant):
-        print("here is the variabt", variant)
         kmeans_results = tab_manager.generate_kmeans_results(variant)
-        print(kmeans_results)
         
         if kmeans_results is None or kmeans_results.empty:
             # No data selected for either case
@@ -238,7 +366,26 @@ def register_callbacks(app, variants_data):
             )
         
         
-        return render_basic_table1(kmeans_results)
+        return render_basic_table_with_font(kmeans_results)
+    
+    @app.callback(
+        Output("selection_tag_summary", "children"),
+        [
+            Input("variant_selector", "value"),  # Correctly using 'data' property
+        ]
+    )
+    def generate_selection_summary(variant):
+        kmeans_results = tab_manager.generate_kmeans_results(variant)
+        
+        if kmeans_results is None or kmeans_results.empty:
+            # No data selected for either case
+            return html.Div(
+                "No data KMeans results.",
+                className="prompt-message",
+            )
+        
+        
+        return render_basic_table_with_font(kmeans_results)
         
     @app.callback(
         Output("centroid_matrix_container", "children"),

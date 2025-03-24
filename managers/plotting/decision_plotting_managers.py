@@ -60,7 +60,7 @@ class CorrelationMatrix(BaseAnalysis):
             # # Set the values in the upper triangle to NaN
             # correlation_matrix = correlation_matrix.mask(mask)
             config = MatrixConfig(
-                title=f"{correlation_method.capitalize()} Correlation Matrix of Aggregated Data",
+                title=f"{correlation_method.capitalize()} Correlation Matrix of Joint Variables",
                 x="Variables",
                 y="Variables",
                 color="Correlation",
@@ -115,10 +115,16 @@ class DecisionScatter(BasePlotting):
         """
         Generate the token length distribution plot.
         """
+        if x_column == "Pre X" and y_column == "Pre Y":
+            title_prefix = "Pre-trained"
+        else:
+            title_prefix = "Fine-tuned"
+
+        title = f"{title_prefix} Decision Boundary Scatter Plot by {color_column}"
         hover_columns = HoverColumns
         color_map = ColorMap()
         scatter_config = DecisionScatterConfig(
-            title=f"Decision Boundary Scatter Plot by {color_column}",
+            title=title,
             hover_data=hover_columns.list_columns(),
             xaxis_title=x_column,
             yaxis_title=y_column,
@@ -141,7 +147,7 @@ class MeasureScatter(BasePlotting):
         grid_visible = axis_visible
         color_map = ColorMap()
         scatter_config = DecisionScatterConfig(
-            title=f"Measures Scatter Plot by {color_column}",
+            title=f"Measures Scatter Plot: {x_column} vs {x_column} (colored by {color_column})",
             hover_data=hover_columns.list_columns(),
             xaxis_title=x_column,
             yaxis_title=y_column,
@@ -151,16 +157,57 @@ class MeasureScatter(BasePlotting):
             yaxis_showgrid=grid_visible,
             color_discrete_map=color_map.color_map,
         )
-        return create_scatter_plot_with_color(
+        # return create_scatter_plot_with_color(
+        #     selected_df, x_column, y_column, color_column, symbol_column, scatter_config
+        # )
+        fig = create_scatter_plot_with_color(
             selected_df, x_column, y_column, color_column, symbol_column, scatter_config
         )
-        #  import pandas as pd
-        # filtered = selected_df.replace(-1, pd.NA)
-        # filtered = filtered.dropna()
-        # return create_scatter_plot_with_color(
-        #     filtered, x_column, y_column, color_column, symbol_column, scatter_config
-        # )
+        non_spatial = (x_column not in ["X", "Pre X"]) and (y_column not in ["Y", "Pre Y"])
+        if non_spatial:
+            try:
+                x_mean = selected_df[x_column].mean()
+                y_mean = selected_df[y_column].mean()
 
+                # Add dashed mean lines
+                fig.add_vline(
+                    x=x_mean,
+                    line_dash="dash",
+                    line_color="gray",
+                    opacity=0.5,
+                )
+                fig.add_hline(
+                    y=y_mean,
+                    line_dash="dash",
+                    line_color="gray",
+                    opacity=0.5,
+                )
+
+                # Add text labels for the mean values near the lines
+                fig.add_annotation(
+                    x=x_mean,
+                    y=selected_df[y_column].min(),  # Anchor at bottom to avoid points
+                    text=f"Mean X: {x_mean:.2f}",
+                    showarrow=False,
+                    yshift=-20,
+                    font=dict(size=12, color="gray"),
+                    textangle=90,
+                )
+
+                fig.add_annotation(
+                    x=selected_df[x_column].min(),  # Anchor at left
+                    y=y_mean,
+                    text=f"Mean Y: {y_mean:.2f}",
+                    showarrow=False,
+                    xshift=-20,
+                    font=dict(size=12, color="gray"),
+                )
+
+            except Exception as e:
+                logging.warning(f"[MeasurePlot] Could not add mean lines or labels: {e}")
+
+        return fig
+        
 class SelectionTagProportion(BaseAnalysis):
     @BaseAnalysis.handle_errors
     def generate_plot(self, df, columns):

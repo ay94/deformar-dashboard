@@ -4,9 +4,92 @@ from dash import dcc, html
 
 from layouts.managers.layout_managers import (CustomButton, LoadingContainer,
                                               SectionContainer, VariantSection,
+                                              FilterLayerSection,
                                               generate_dropdown_options)
 
+from dash import dash_table
+class FilterLayer:
+    def __init__(self, config):
+        self.filter_column_dropdown = dcc.Dropdown(
+            id="filter_column_dropdown",
+            placeholder="Select Category...",
+            options=generate_dropdown_options(
+                config.get("categorical_columns", ["Wrong Columns"])
+            ),
+            style={"minWidth": "180px", "marginRight": "10px"},
+        )
+        self.filter_value_dropdown = dcc.Dropdown(
+            id="filter_value_dropdown",
+            placeholder="Select Value...",
+            style={"minWidth": "180px", "marginRight": "10px"},
+        )
+        self.apply_button = CustomButton("Apply Filter", "filter_table_button").render()
+        self.reset_button = CustomButton("Reset Filter", "reset_filter_button").render()
+        self.data_table = dash_table.DataTable(
+            id='filtered_data_table',
+            columns=[],  # will be filled by callback
+            data=[],     # will be filled by callback
+            editable=True,
+            filter_action="native",
+            sort_action="native",
+            sort_mode='multi',
+            column_selectable="single",
+            row_selectable='multi',
+            row_deletable=True,
+            selected_rows=[],
+            page_action='native',
+            page_current=0,
+            page_size=10,
+            style_header={
+                'text-align': "center",
+                'background-color': "#4bb3a8",
+                'color': 'white',
+                "fontWeight": "bold",
+            },
+        )
+        self.filtered = dcc.Store(id="filter_state", data={"filtered": False})
 
+
+    def render(self):
+        # Filters row
+        filter_controls = html.Div(
+            children=[
+                self.apply_button,
+                self.filter_column_dropdown,
+                self.filter_value_dropdown,
+                self.reset_button,
+            ],
+            style={
+                "display": "flex",
+                "justifyContent": "center",
+                "alignItems": "center",
+                "gap": "10px",
+                "flexWrap": "wrap",
+                "marginBottom": "20px",
+            },
+        )
+
+        # Table below
+        data_table_wrapper = html.Div(
+            children=[
+                self.data_table,
+                self.filtered,
+            ],
+            style={
+                "width": "95%",
+                "display": "flex",
+                "justifyContent": "center",
+            },
+        )
+
+        return FilterLayerSection(
+            'Filtering Layer',
+            content_components=[
+                filter_controls,
+                data_table_wrapper,
+            ]
+        ).render()
+       
 class DecisionSection:
     def __init__(self, config):
         
@@ -91,29 +174,40 @@ class DecisionSection:
 
 class DecisionTabLayout:
     def __init__(self, config_manager):
+        
         self.variants = (
             config_manager.variants
         )  # You might want to use config settings if applicable
-        self.decision_tab_config = (
-            config_manager.decision_tab
+        
+        self.qualitative_tab_config = (
+            config_manager.qualitative
         )  # You might want to use config settings if applicable
 
     def render(self):
 
         select_variant_container = VariantSection(self.variants).render()
-
+        
+        # Training Impact  
         training_header = html.H3("Training Boundary", className="section-header")
+        
         view_train_decision = CustomButton(
             "View Training Decision Boundary", "view_training_decision_boundary"
         ).render()
+        
         training_graph_container = LoadingContainer(
             container_id="training_graph",
             loader_id="training_graph_loader",
             container_style={"width": "70%", "height": "100%"},
         ).render()
-
+        
+        #  Filtering Layer 
+        filter_layer_section = FilterLayer(
+            self.qualitative_tab_config
+            ).render()
+        
+        # Decision Layer 
         decision_section = DecisionSection(
-            self.decision_tab_config
+            self.qualitative_tab_config
         ).render()  # Create and render the distribution section
 
         decision_graph_prompt = html.Div(id="decision_graph_prompt")
@@ -240,37 +334,59 @@ class DecisionTabLayout:
                 dbc.Row(
                     [
                         dbc.Col(
-                            dcc.Loading(
-                                id="loading_selection_tags",
-                                type="default",
-                                children=html.Div(
-                                    id="selection_tag_container",
-                                    style={
-                                        "width": "100%",
-                                        "height": "auto",
-                                        "overflow": "visible",
-                                    },  # Use dynamic height and ensure overflow is visible
+                            [
+                                dcc.Dropdown(
+                                        id="selection_summary_column",
+                                        multi=False,
+                                        placeholder="Select Category...",
+                                        options=[],  # Assuming you have a function to generate options
+                                        style={
+                                            "width": "100%"
+                                        },  # Assuming you want to use the full width for styling
+                                    ),
+                                dcc.Loading(
+                                    id="loading_selection_tags",
+                                    type="default",
+                                    children=html.Div(
+                                        id="selection_tag_container",
+                                        style={
+                                            "width": "100%",
+                                            "height": "auto",
+                                            "overflow": "visible",
+                                        },  # Use dynamic height and ensure overflow is visible
+                                    ),
                                 ),
-                            ),
+                            ],
                             width=6,
                             style={"padding": "5px"},
                         ),
-                        # dbc.Col(
-                        #     dcc.Loading(
-                        #         id="loading_clustering_table",
-                        #         type="default",
-                        #         children=html.Div(
-                        #             id="centroid_matrix_container",
-                        #             style={
-                        #                 "width": "100%",
-                        #                 "height": "auto",
-                        #                 "overflow": "visible",
-                        #             },  # Use dynamic height and ensure overflow is visible
-                        #         ),
-                        #     ),
-                        #     width=6,
-                        #     style={"padding": "5px"},
-                        # ),
+                        dbc.Col(
+                            [
+                                dcc.Dropdown(
+                                    id="selection_summary_column",
+                                    multi=False,
+                                    placeholder="Select Category...",
+                                    options=[],  # Assuming you have a function to generate options
+                                    style={
+                                        "width": "100%"
+                                    },  # Assuming you want to use the full width for styling
+                                ),
+                                dcc.Loading(
+                                    id="loading_selection_summary",
+                                    type="default",
+                                    children=html.Div(
+                                        id="selection_tag_summary",
+                                        style={
+                                            "width": "100%",
+                                            "height": "auto",
+                                            "overflow": "visible",
+                                        },  # Use dynamic height and ensure overflow is visible
+                                    ),
+                                ),
+                            ],
+                            width=6,
+                            style={"padding": "5px"},
+                        ),
                     ]
                 )
             ],
@@ -352,6 +468,7 @@ class DecisionTabLayout:
                 training_header,
                 training_graph_container,
                 view_train_decision,
+                filter_layer_section,
                 decision_section,
                 decision_graph_prompt,
                 measure_container,
