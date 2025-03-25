@@ -8,6 +8,25 @@ import plotly.graph_objects as go
 from experiment_utils.utils import FileHandler
 from flask_caching import Cache
 from tqdm.autonotebook import tqdm
+import torch
+from torch.nn import Module
+from typing import Optional
+from transformers import PreTrainedModel
+from transformers import AutoModelForTokenClassification
+from experiment_utils.train import DatasetManager
+from experiment_utils.config_managers import ExtractionConfigManager
+
+
+
+MODEL_MAP = {
+    "ANERCorp_CamelLab_arabertv02": "aubmindlab/bert-base-arabertv02",
+    "conll2003_bert": "bert-base-cased",
+}
+
+DATA_MAP = {
+    "ANERCorp_CamelLab_arabertv02": "ANERCorp_CamelLab",
+    "conll2003_bert": "conll2003",
+}
 
 
 @dataclass
@@ -34,6 +53,15 @@ class DashboardData:
     attention_similarity_matrix: np.ndarray = field(
         default_factory=lambda: np.array([])
     )
+    pretrained_model: Optional[Module] = None
+    pretrained_model_name: Optional[str] = None
+    fine_tuned_model: Optional[Module] = None
+    fine_tuned_model_path: Optional[str] = None
+    dataset_manager: Optional[DatasetManager] = None
+    train_dataset: Optional[Any] = None
+    test_dataset: Optional[Any] = None
+  
+
 
     def __post_init__(self):
         # Round float columns to four decimal places
@@ -138,11 +166,38 @@ class DashboardData:
         ]
         choices = ["TP", "FP", "FN"]
         return np.select(conditions, choices, default="TN")  # Return only the classification column
+    @property
+    def get_fine_tuned_model(self):
+        if self.fine_tuned_model is None:
+            self.fine_tuned_model = torch.load(self.fine_tuned_model_path, map_location="cpu")
+            self.fine_tuned_model.eval()
+        return self.fine_tuned_model
+    
+    @property
+    def get_pretrained_model(self):
+        if self.pretrained_model is None:
+            self.pretrained_model = AutoModelForTokenClassification.from_pretrained(
+                self.pretrained_model_name
+            )
+        return self.pretrained_model
+
+    @property
+    def get_train_dataset(self):
+        if self.train_dataset is None:
+            self.train_dataset = self.dataset_manager.get_dataset("train")
+        return self.train_dataset
+
+    @property
+    def get_test_dataset(self):
+        if self.test_dataset is None:
+            self.test_dataset = self.dataset_manager.get_dataset("test")
+        return self.test_dataset
 
     
 class DataLoader:
     def __init__(self, config_manager, variant_name):
-        self.data_config = config_manager.data_config
+        self.config_manager = config_manager
+        self.variant = variant_name
         self.data_dir = config_manager.data_dir / variant_name
         self.dashboard_data = {}
 
@@ -187,13 +242,60 @@ class DataLoader:
     ) -> pd.DataFrame:
         """Rename columns in the DataFrame based on provided mappings."""
         return data.rename(columns=column_mappings)
+    
+    def load_model(self):
+        
+        model_name = MODEL_MAP.get(self.variant)
+
+        if not model_name:
+            raise ValueError(f"No pretrained model mapping found for variant: {self.variant}")
+
+        # Path to the .bin file
+        model_path = self.data_dir / "fine_tuning" / "model_binary.bin"
+
+        if not model_path.exists():
+            raise FileNotFoundError(f"Fine-tuned model not found at: {model_path}")
+
+        model = torch.load(model_path, map_location="cpu")
+
+        model.eval()
+
+        return model
+    
+    def load_data_manager(self):
+        extraction_config_dir = self.config_manager.data_dir / self.variant / 'configs/extraction_config.yaml'
+        
+        corpora_dir = self.config_manager.corpora_dir
+
+        extraction_config = ExtractionConfigManager(extraction_config_dir)
+
+        tokenization_config = extraction_config.tokenization_config
+        data_manager = DatasetManager(
+                corpora_dir,
+                DATA_MAP[self.variant],
+                tokenization_config,
+                False
+            )
+        return data_manager
 
     def load_all(self):
 
         logging.info("Loading Dashboard Data from  %s", self.data_dir)
-        for file_name, file_config in tqdm(self.data_config.items()):
+        for file_name, file_config in tqdm(self.config_manager.data_config.items()):
             self.dashboard_data[file_name] = self.load(file_name, file_config)
+        # logging.info('Loading Fine tuned Model')
+        # self.dashboard_data["fine_tuned_model"] = self.load_model()
+        self.dashboard_data["fine_tuned_model_path"] = self.data_dir / "fine_tuning" / "model_binary.bin"
+        # logging.info('Loading Pre Trained Model')
+        self.dashboard_data["pretrained_model_name"] = MODEL_MAP[self.variant]
+        self.dashboard_data["dataset_manager"] = self.load_data_manager()
 
+        # self.dashboard_data["pretrained_model"] = AutoModelForTokenClassification.from_pretrained(
+        #     MODEL_MAP[self.variant]
+        # )
+        # logging.info('Loading Data')
+        # self.dashboard_data["train_dataset"] = self.load_data('train')
+        # self.dashboard_data["test_dataset"] = self.load_data('test')
 
 class DataManager:
     def __init__(self, config_manager, server) -> None:

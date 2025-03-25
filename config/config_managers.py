@@ -76,6 +76,11 @@ class DashboardConfigManager:
     def data_dir(self) -> Path:
         base_folder = init()
         return base_folder / self.config.get("dashboard", {}).get("data_dir", "")
+    
+    @property
+    def corpora_dir(self) -> Path:
+        base_folder = init()
+        return base_folder / self.config.get("dashboard", {}).get("corpora_dir", "")
 
     @property
     def data_config(self) -> Dict:
