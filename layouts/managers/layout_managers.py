@@ -27,11 +27,11 @@ def process_json_data(jsonData):
     return df
 
 
-def process_selection(decisionSelection):
+def process_selection(selection):
     selection_ids = []
-    if decisionSelection:
-        if isinstance(decisionSelection, str) and decisionSelection.strip():
-            decision_selection = process_json_data(decisionSelection)
+    if selection:
+        if isinstance(selection, str) and selection.strip():
+            decision_selection = process_json_data(selection)
             if not decision_selection.empty:
                 selection_ids = decision_selection["Global Id"].tolist()
         else:

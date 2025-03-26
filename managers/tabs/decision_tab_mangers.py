@@ -15,6 +15,20 @@ from managers.tabs.tab_managers import BaseTabManager
 class DecisionTabManager(BaseTabManager):
     def __init__(self, variants_data):
         super().__init__(variants_data)
+    
+    def get_sentence_ids(self, variant, selected_ids=None):
+        
+        tab_data = self.get_tab_data(variant)
+        if not tab_data or tab_data.analysis_data.empty:
+            return None  # Let the callback handle PreventUpdate
+
+        df = tab_data.analysis_data
+        if 'Sentence Ids' not in df.columns:
+            return None
+        if selected_ids:
+           df = df[df['Global Id'].isin(selected_ids)]
+
+        return df['Sentence Ids'].unique().tolist()
 
     def get_training_data(self, variant):
         """Fetch training data for a specific variant."""

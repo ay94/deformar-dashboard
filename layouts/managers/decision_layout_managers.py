@@ -52,7 +52,6 @@ class FilterLayer:
         )
         self.filtered = dcc.Store(id="filter_state", data={"filtered": False})
 
-
     def render(self):
         # Filters row
         filter_controls = html.Div(
@@ -75,7 +74,13 @@ class FilterLayer:
         # Table below
         data_table_wrapper = html.Div(
             children=[
-                self.data_table,
+                dcc.Loading(
+                    id="loading_decision_container",
+                    type="default",
+                    children=[
+                        self.data_table
+                    ],
+                ),
                 self.filtered,
             ],
             style={
@@ -235,7 +240,7 @@ class DecisionTabLayout:
                                 type="default",
                                 children=[
                                     dcc.Graph(id="measure_scatter", figure={}),
-                                    dcc.Store(id="measure_store"),
+                                    # dcc.Store(id="measure_store"),
                                 ],
                             ),
                             width=7,
@@ -251,7 +256,7 @@ class DecisionTabLayout:
                                 type="default",
                                 children=[
                                     dcc.Graph(id="decision_scatter", figure={}),
-                                    dcc.Store(id="decision_store"),
+                                    # dcc.Store(id="decision_store"),
                                 ],
                             ),
                             width=12,

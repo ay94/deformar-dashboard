@@ -286,3 +286,4 @@ class ColorMap:
     def get_color(self, key: str) -> str:
         """Return the color for a given key, defaulting to 'grey' if not found."""
         return self.color_map.get(key, "grey")
+    

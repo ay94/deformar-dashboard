@@ -57,6 +57,9 @@ class DashboardData:
     pretrained_model_name: Optional[str] = None
     fine_tuned_model: Optional[Module] = None
     fine_tuned_model_path: Optional[str] = None
+    variant: Optional[str] = None
+    extraction_config_dir: Optional[str] = None
+    corpora_dir: Optional[str] = None
     dataset_manager: Optional[DatasetManager] = None
     train_dataset: Optional[Any] = None
     test_dataset: Optional[Any] = None
@@ -171,24 +174,43 @@ class DashboardData:
         if self.fine_tuned_model is None:
             self.fine_tuned_model = torch.load(self.fine_tuned_model_path, map_location="cpu")
             self.fine_tuned_model.eval()
+            self.fine_tuned_model.enable_attentions()
         return self.fine_tuned_model
     
     @property
     def get_pretrained_model(self):
         if self.pretrained_model is None:
             self.pretrained_model = AutoModelForTokenClassification.from_pretrained(
-                self.pretrained_model_name
+                self.pretrained_model_name,
+                output_attentions=True
             )
         return self.pretrained_model
 
     @property
+    def get_dataset_manager(self):
+        extraction_config = ExtractionConfigManager(self.extraction_config_dir)
+
+        tokenization_config = extraction_config.tokenization_config
+        self.dataset_manager = DatasetManager(
+                self.corpora_dir,
+                DATA_MAP[self.variant],
+                tokenization_config,
+                False
+            )
+        return self.dataset_manager
+    
+    @property
     def get_train_dataset(self):
+        if self.dataset_manager is None:
+            self.dataset_manager = self.get_dataset_manager
         if self.train_dataset is None:
             self.train_dataset = self.dataset_manager.get_dataset("train")
         return self.train_dataset
 
     @property
     def get_test_dataset(self):
+        if self.dataset_manager is None:
+            self.dataset_manager = self.get_dataset_manager
         if self.test_dataset is None:
             self.test_dataset = self.dataset_manager.get_dataset("test")
         return self.test_dataset
@@ -288,7 +310,10 @@ class DataLoader:
         self.dashboard_data["fine_tuned_model_path"] = self.data_dir / "fine_tuning" / "model_binary.bin"
         # logging.info('Loading Pre Trained Model')
         self.dashboard_data["pretrained_model_name"] = MODEL_MAP[self.variant]
-        self.dashboard_data["dataset_manager"] = self.load_data_manager()
+        self.dashboard_data["variant"] = self.variant
+        self.dashboard_data["extraction_config_dir"] =  self.config_manager.data_dir / self.variant / 'configs/extraction_config.yaml'
+        self.dashboard_data["corpora_dir"] = self.config_manager.corpora_dir
+        # self.dashboard_data["dataset_manager"] = self.load_data_manager()
 
         # self.dashboard_data["pretrained_model"] = AutoModelForTokenClassification.from_pretrained(
         #     MODEL_MAP[self.variant]

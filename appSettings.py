@@ -1,7 +1,7 @@
 import dash_bootstrap_components as dbc
 from dash import Dash, Input, Output, dcc, html
 
-from callbacks import dataset_callback, decision_callback, load_callback
+from callbacks import dataset_callback, decision_callback, load_callback, instance_callback
 from dataManager import DataManager
 from layouts.tabs import (
                     dataset_layout,
@@ -46,6 +46,8 @@ def start_app(config_manager):
             dcc.Interval(
                 id="data-loading-check", interval=1000, n_intervals=0
             ),  # Check every 1 second
+            dcc.Store(id="decision_store"),
+            dcc.Store(id="measure_store"),
         ]
     )
     tab_layouts = {
@@ -99,4 +101,5 @@ def start_app(config_manager):
     variants_data = load_callback.register_callbacks(app, data_manager)
     dataset_callback.register_callbacks(app, variants_data)
     decision_callback.register_callbacks(app, variants_data)
+    instance_callback.register_callbacks(app, variants_data)
     return app

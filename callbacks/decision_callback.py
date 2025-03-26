@@ -18,7 +18,8 @@ DISPLAY_COLUMNS = [
 
 def register_callbacks(app, variants_data):
     tab_manager = DecisionTabManager(variants_data)
-
+    
+   
     @app.callback(
         Output("training_graph", "children"),
         [
