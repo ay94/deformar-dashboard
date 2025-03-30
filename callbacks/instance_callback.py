@@ -189,16 +189,36 @@ def register_callbacks(app, variants_data):
             Output("token_similarity_table_train", "children"),
             Output("token_similarity_table_test", "children"),
         ],
-        Input("compute_token_analysis", "n_clicks"),
+        [
+            Input("compute_token_analysis", "n_clicks"),
+            Input("core_token_selector", "value"),
+        ],
         [
             State("variant_selector", "value"),
             State("instance_selector", "value"),
-            State("core_token_selector", "value"),
+            
         ],
         prevent_initial_call=True
     )
-    def compute_token_analysis(n_clicks, variant, sentence_id, token_selector_id):
-        
+    def compute_token_similarity_analysis(n_clicks, token_selector_id, variant, sentence_id):
+        ctx = callback_context
+        trigger = ctx.triggered[0]["prop_id"].split(".")[0]
+
+        # Case 1: Token changed — reset everything
+        if trigger == "core_token_selector":
+            empty_fig = go.Figure(layout={"annotations": [{
+                "text": "ℹ️ Select a token and click the button to compute similarity.",
+                "xref": "paper", "yref": "paper",
+                "showarrow": False,
+                "font": {"size": 14, "color": "gray"}
+            }]})
+
+            empty_table = html.Div(
+                "No similarity data yet. Click the button to compute.",
+                style={"fontStyle": "italic", "color": "#888", "marginTop": "10px"}
+            )
+
+            return empty_fig, empty_fig, empty_table, empty_table
         if not (variant and sentence_id is not None and token_selector_id is not None):
             raise PreventUpdate
 
@@ -235,7 +255,10 @@ def register_callbacks(app, variants_data):
         
     
     @app.callback(
-    Output("token_label_distribution", "figure"),
+    [
+        Output("token_label_distribution", "figure"),
+        Output("token_confidence_scores", "figure"),
+    ],
         Input("core_token_selector", "value"),
         State("variant_selector", "value"),
         prevent_initial_call=True
@@ -243,85 +266,113 @@ def register_callbacks(app, variants_data):
     def update_label_distribution(token_selector_id, variant):
         if not token_selector_id or not variant:
             raise PreventUpdate
-
         try:
-            fig = tab_manager.compute_token_label_distribution(
+            label_dist_fig = tab_manager.compute_token_label_distribution(
                 variant=variant,
                 token_selector_id=token_selector_id
             )
-            return fig
+            token_prediction_score_fig = tab_manager.compute_token_prediction_scores(
+                variant=variant,
+                token_selector_id=token_selector_id
+            )
+            return label_dist_fig, token_prediction_score_fig
         except Exception as e:
             print(f"❌ Failed to generate label distribution plot: {e}")
-            return go.Figure()
+            return go.Figure(), go.Figure()
     
+    
+    from dash import callback_context
+
     @app.callback(
         [
             Output("token_view_split_selector", "options"),
             Output("token_view_split_selector", "value"),
             Output("token_view_sentence_selector", "options"),
-            Output("token_view_sentence_selector", "value")
+            Output("token_view_sentence_selector", "value"),
         ],
-        Input("core_token_selector", "value"),
+        [
+            Input("core_token_selector", "value"),
+            Input("token_view_split_selector", "value")
+        ],
         State("variant_selector", "value"),
         prevent_initial_call=True
     )
-    def update_sentence_dropdown(token_selector_id, variant):
+    def update_split_and_sentence(token_selector_id, split, variant):
         if not token_selector_id or not variant:
             raise PreventUpdate
 
-        anchor_token, _, _ = token_selector_id.split("@#")  # anchor_token, sent_id, token_index
-        
+        ctx = callback_context
+        triggered_id = ctx.triggered[0]["prop_id"].split(".")[0]
 
+        anchor_token, _, _ = token_selector_id.split("@#")
         tab_data = tab_manager.get_tab_data(variant)
         train_df = tab_data.train_data
         test_df = tab_data.analysis_data
-        
-        # Filter matches
-        train_matches = train_df[train_df["Core Tokens"] == anchor_token]["Sentence Ids"].unique()
-        test_matches = test_df[test_df["Core Tokens"] == anchor_token]["Sentence Ids"].unique()
-        
 
-        options = []
+        split_options = []
         split_value = None
         sentence_options = []
         sentence_value = None
 
-        if len(train_matches) and len(test_matches):
-            options = [{"label": "Train", "value": "train"}, {"label": "Test", "value": "test"}]
-            split_value = "train"
-            sentence_options = [{"label": f"Sentence {i}", "value": i} for i in train_matches]
-            sentence_value = train_matches[0]
-        elif len(train_matches):
-            options = [{"label": "Train", "value": "train"}]
-            split_value = "train"
-            sentence_options = [{"label": f"Sentence {i}", "value": i} for i in train_matches]
-            sentence_value = train_matches[0]
-        elif len(test_matches):
-            options = [{"label": "Test", "value": "test"}]
-            split_value = "test"
-            sentence_options = [{"label": f"Sentence {i}", "value": i} for i in test_matches]
-            sentence_value = test_matches[0]
-        else:
-            raise PreventUpdate
+        if not train_df.empty and anchor_token in train_df["Core Tokens"].values:
+            split_options.append({"label": "Train", "value": "train"})
 
-        return options, split_value, sentence_options, sentence_value
-    
+        if not test_df.empty and anchor_token in test_df["Core Tokens"].values:
+            split_options.append({"label": "Test", "value": "test"})
+
+        # If triggered by core_token_selector → set split list, reset sentence
+        if triggered_id == "core_token_selector":
+            if len(split_options) == 1:
+                split_value = split_options[0]["value"]
+                df = train_df if split_value == "train" else test_df
+                sentence_matches = df[df["Core Tokens"] == anchor_token]["Sentence Ids"].unique()
+                sentence_options = [{"label": f"Sentence {int(i)}", "value": int(i)} for i in sentence_matches]
+                sentence_value = int(sentence_matches[0]) if len(sentence_matches) else None
+            else:
+                return split_options, None, [], None
+
+        # If triggered by split dropdown → update sentence dropdown
+        elif triggered_id == "token_view_split_selector":
+            df = train_df if split == "train" else test_df
+            sentence_matches = df[df["Core Tokens"] == anchor_token]["Sentence Ids"].unique()
+            sentence_options = [{"label": f"Sentence {int(i)}", "value": int(i)} for i in sentence_matches]
+            sentence_value = int(sentence_matches[0]) if len(sentence_matches) else None
+            split_value = split  # preserve split value
+
+        return split_options, split_value, sentence_options, sentence_value
+
+
+
     
     @app.callback(
         Output("token_sentence_render", "children"),
         [
             Input("token_view_sentence_selector", "value"),
             Input("token_view_split_selector", "value"),
+            Input("core_token_selector", "value"),
         ],
         [
-            State("core_token_selector", "value"),
+            
             State("variant_selector", "value"),
         ],
         prevent_initial_call=True
     )
     def render_token_sentence(sentence_id, split, token_selector_id, variant):
-        if not token_selector_id or sentence_id is None or not variant or not split:
-            raise PreventUpdate
+        ctx = dash.callback_context
+        if not ctx.triggered:
+            return no_update
+
+        trigger_id = get_input_trigger(ctx)
+        # Show neutral message if triggered by token change
+        if trigger_id == "core_token_selector" and (sentence_id is None or split is None):
+            return html.Div(
+                "👉 Please select a data split and a sentence to view the token in context.",
+                style={
+                    "fontStyle": "italic",
+                    "color": "#888",
+                    "marginTop": "10px"
+                }
+            )
 
         anchor_token, _, token_index = token_selector_id.split("@#")
         token_index = int(token_index)
@@ -329,7 +380,12 @@ def register_callbacks(app, variants_data):
         tab_data = tab_manager.get_tab_data(variant)
         dataset = tab_data.get_train_dataset if split == "train" else tab_data.get_test_dataset
         tokenizer = dataset.tokenizer
-        example = dataset.__getitem__(int(sentence_id))
+        try:
+            example = dataset.__getitem__(int(sentence_id))
+        except IndexError:
+            print(f"⚠️ Invalid sentence ID: {sentence_id} for split {split}")
+            raise PreventUpdate
+        # example = dataset.__getitem__(int(sentence_id))
 
         input_ids = example['input_ids'][example['input_ids'] != 0]
         tokens = tokenizer.convert_ids_to_tokens(input_ids)

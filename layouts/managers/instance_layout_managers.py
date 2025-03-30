@@ -200,26 +200,44 @@ def render_token_analysis():
         ], justify="center", className="mb-4"),
 
         html.Hr(),
-        html.H5("Label Distribution Across Splits", className="text-center"),
-        dcc.Graph(id="token_label_distribution"),
+        html.H5("Prediction Confidence Scores", className="text-center"),
+        dcc.Graph(id="token_confidence_scores", figure=go.Figure()),
+        html.Hr(),
 
+        html.Hr(),
+        html.H5("Label Distribution Across Splits", className="text-center"),
+        dcc.Graph(id="token_label_distribution", figure=go.Figure()),
         html.Hr(),
 
 
         dbc.Row([
             dbc.Col([
                 html.H5("Train Split", className="text-center"),
-                dcc.Graph(id="token_similarity_train"),
-                html.Div(id="token_similarity_table_train", style={"padding": "16px"})
+                dcc.Loading(
+                            id="loading_attention_similarity",
+                            type="default",
+                            children=[
+                                dcc.Graph(id="token_similarity_train"),
+                                html.Div(id="token_similarity_table_train", style={"padding": "16px"})
+                            ]
+                        ),
+                # dcc.Graph(id="token_similarity_train"),
+                # html.Div(id="token_similarity_table_train", style={"padding": "16px"})
             ], width=6),
             dbc.Col([
                 html.H5("Test Split", className="text-center"),
-                dcc.Graph(id="token_similarity_test"),
-                html.Div(id="token_similarity_table_test", style={"padding": "16px"})
+                dcc.Loading(
+                            id="loading_attention_similarity",
+                            type="default",
+                            children=[
+                                dcc.Graph(id="token_similarity_test"),
+                                html.Div(id="token_similarity_table_test", style={"padding": "16px"})
+                            ]
+                        ),
             ], width=6),
         ], className="mb-4"),
 
-        
+         
 
         dbc.Row([
             dbc.Col([

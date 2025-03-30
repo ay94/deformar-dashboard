@@ -10,6 +10,7 @@ import pandas as pd
 import plotly.graph_objs as go
 import plotly.express as px
 from config.config_managers import ColorMap
+from config.enums import CorrelationColumns
 from bertviz import head_view, model_view
 from managers.plotting.decision_plotting_managers import (
     CentroidAverageSimilarity, CorrelationMatrix, DecisionScatter,
@@ -370,13 +371,11 @@ class InstanceTabManager(BaseTabManager):
             anchor_vector = output.last_hidden_state[0, token_index].cpu().numpy()
 
         # Filter similar tokens in that split with same text
-        print(df.head())
         candidates = df[
             (df["Labels"] != -100) &
             (df["Core Tokens"] == anchor_token)
         ][["Global Id", "Words", "Sentence Ids", "Token Positions"]]
         
-        candidate_sample = candidates.sample(min(20, len(candidates)))
 
         logging.info(f"📌 Found {len(candidates)} candidates matching token '{anchor_token}' in {split} split")
         candidate_sample = candidates.sample(min(20, len(candidates)))
@@ -507,6 +506,48 @@ class InstanceTabManager(BaseTabManager):
         )
 
         return fig
+    
+    def compute_token_prediction_scores(self, variant, token_selector_id):
+        try:
+            anchor_token, _, _ = token_selector_id.split("@#")
+        except Exception as e:
+            logging.error(f"❌ Invalid Token Selector ID format: {token_selector_id} | Error: {e}")
+            return go.Figure()
+
+        tab_data = self.get_tab_data(variant)
+        if not tab_data:
+            return go.Figure()
+
+       
+        analysis_data = tab_data.analysis_data
+        token_df = analysis_data[analysis_data['Token Selector Id'] == token_selector_id]
+        columns = CorrelationColumns()
+        confidence_metrics = columns.confidence_metrics
+        # Melt (reshape) the dataframe to long format
+        melted_df = token_df.melt(
+            value_vars=confidence_metrics,
+            var_name='Entity Tags',
+            value_name='Confidence Score'
+        )
+
+        fig = px.bar(
+            melted_df,
+            x="Entity Tags",
+            y="Confidence Score",
+            # color="Split",
+            # barmode="group",
+            title=f"Confidence Scores by Entity Type",
+            template="plotly_white"
+        )
+
+        fig.update_layout(
+            xaxis_title="Entity Label",
+            yaxis_title="Count",
+            legend_title="Data Split"
+        )
+
+        return fig
+
 
 
     
