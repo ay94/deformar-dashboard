@@ -21,7 +21,10 @@ def register_callbacks(app, variants_data):
     
    
     @app.callback(
-        Output("training_graph", "children"),
+        [   
+            Output("training_graph", "children"),
+            Output("training_sentences", "options")
+        ],
         [
             Input("variant_selector", "value"),
             Input("view_training_decision_boundary", "n_clicks"),
@@ -32,14 +35,60 @@ def register_callbacks(app, variants_data):
             return html.Div(
                 "Please extract training data or click the button.",
                 className="prompt-message",
-            )
-        fig = tab_manager.get_training_data(variant)
+            ), ['No Selection']
+        fig, sentence_ids = tab_manager.get_training_data(variant)
         if fig is None:
             return html.Div(
                 "Please extract training data or click the button.",
                 className="prompt-message",
-            )
-        return dcc.Graph(figure=fig)
+            ), ['No Selection']
+        return dcc.Graph(figure=fig), sentence_ids
+    
+    
+    @app.callback(
+        [
+            Output("training_sentence", "children"),
+            Output("training_truth", "children"),
+        ],
+        [
+            Input("variant_selector", "value"),
+            Input("training_sentences", "value"),
+        ]
+    )
+    def update_instance_display(variant, instance_id):
+        if not variant or instance_id is None:
+            raise PreventUpdate
+        sentence_colored, truth_colored = tab_manager.generate_training_output(variant, instance_id)
+        return sentence_colored, truth_colored
+    
+    
+
+    @app.callback(
+        [
+            Output("training_entity_true_iob", "children"),
+            Output("training_entity_true_iob2", "children"),
+        ],
+        [
+            Input("variant_selector", "value"),
+            Input("training_sentences", "value"),
+        ],
+    )
+    def update_entity_annotations(variant, instance_id):
+        if not variant or instance_id is None:
+            raise PreventUpdate
+
+        true_iob, words_iob = tab_manager.get_training_entity_level_annotations_non_strict(variant, instance_id)
+        rendered_true_iob = tab_manager.render_training_entity_tags(true_iob, words_iob)
+    
+
+        true_iob2, words_iob2 = tab_manager.get_training_entity_level_annotations_non_strict(variant, instance_id)
+        rendered_true_iob2 = tab_manager.render_training_entity_tags(true_iob2, words_iob2)
+       
+
+        return (
+            rendered_true_iob,
+            rendered_true_iob2,
+        )
     
     @app.callback(
         Output("filter_value_dropdown", "options"),
@@ -263,6 +312,8 @@ def register_callbacks(app, variants_data):
             y_column = clickData["points"][0].get("y", "Y")
 
         selection_ids = process_selection(decisionSelection)
+        print('I am in the selecgtion measrue plot trigger', len(selection_ids))
+        
 
         # Use filtered table data if available
         is_filtered = filtered_rows and any("id" in row and row["id"] is not None for row in filtered_rows)

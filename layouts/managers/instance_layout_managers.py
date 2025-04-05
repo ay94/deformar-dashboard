@@ -157,21 +157,40 @@ def render_attention_analysis():
         # Pretrained and Finetuned Visuals
         dbc.Row([
             dbc.Col([
-                html.H5("Pretrained", className="text-center"),
-                html.Iframe(id="pre_attention_view", style={"width": "100%", "height": "800px"}),
+                dcc.Loading(
+                    id="loading_bertvis_view_pre",
+                    type="default",
+                    children=[
+                        html.H5("Pretrained", className="text-center"),
+                        html.Iframe(id="pre_attention_view", style={"width": "100%", "height": "600px"}),
+                    ]
+                ),
             ], width=6),
             dbc.Col([
-                html.H5("Finetuned", className="text-center"),
-                html.Iframe(id="fin_attention_view", style={"width": "100%", "height": "800px"}),
+                dcc.Loading(
+                    id="loading_bertvis_view_fin",
+                    type="default",
+                    children=[
+                        html.H5("Finetuned", className="text-center"),
+                        html.Iframe(id="fin_attention_view", style={"width": "100%", "height": "600px"}),
+                    ]
+                ),
             ], width=6),
         ], className="mb-4"),
+
 
         html.Hr(),
 
         # Training Impact Heatmap
         dbc.Row([
             dbc.Col([
-                dcc.Graph(id="instance_training_impact", figure=go.Figure())
+                dcc.Loading(
+                    id="loading_training_impact",
+                    type="default",
+                    children=[     
+                        dcc.Graph(id="instance_training_impact", figure=go.Figure())
+                    ]
+                )
             ], width="auto")
         ], justify="center"),
     ], fluid=True)
@@ -204,13 +223,14 @@ def render_token_analysis():
         dcc.Graph(id="token_confidence_scores", figure=go.Figure()),
         html.Hr(),
 
-        html.Hr(),
-        html.H5("Label Distribution Across Splits", className="text-center"),
+        
+        html.H5("Entity Tag Distribution Across Splits", className="text-center"),
         dcc.Graph(id="token_label_distribution", figure=go.Figure()),
         html.Hr(),
 
 
         dbc.Row([
+            html.H5("Token Similarity Analysis", className="text-center"),
             dbc.Col([
                 html.H5("Train Split", className="text-center"),
                 dcc.Loading(
@@ -241,7 +261,7 @@ def render_token_analysis():
 
         dbc.Row([
             dbc.Col([
-                html.H5("View Token in Sentences", className="text-center"),
+                html.H5("Token Context Viewer", className="text-center"),
                 dcc.Dropdown(id="token_view_split_selector", placeholder="Select Split..."),
                 dcc.Dropdown(id="token_view_sentence_selector", placeholder="Select Sentence..."),
                 html.Div(id="token_sentence_render", style={"padding": "16px"})
@@ -290,7 +310,7 @@ class InstanceTabLayout:
             render_instance_row("📝 Sentence", "instance_sentence"),
             render_instance_row("✅ Ground Truth", "instance_truth"),
             render_instance_row("🔮 Prediction", "instance_pred"),
-            render_instance_row("❌ Mistakes", "instance_mistakes", rtl=False),
+            render_instance_row("❌ Correctness", "instance_mistakes", rtl=False),
             html.Div(style={"marginBottom": "30px"}),  # Add spacing here
             
             html.Hr(),

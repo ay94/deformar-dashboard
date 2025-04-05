@@ -132,6 +132,57 @@ def create_scatter_plot(data, x_column, y_column, config: ScatterConfig):
 
     return fig
 
+def create_scatter_plot_with_color_selected(
+    data, x_column, y_column, color_column, symbol_column, config: ScatterConfig, selectedpoints=None
+):
+    fig = px.scatter(
+        data,
+        x=x_column,
+        y=y_column,
+        color=color_column,
+        symbol=symbol_column,
+        title=config.title,
+        template=config.template,
+        hover_data=config.hover_data,
+        custom_data=["Global Id"],
+        color_discrete_map=config.color_discrete_map,
+    )
+
+    fig.update_traces(
+        selectedpoints=selectedpoints,  # ✅ Add this here
+        marker=dict(
+            size=config.marker_size,
+            opacity=config.marker_opacity,
+            line=dict(
+                width=config.line_width,
+                color=config.line_color,
+            ),
+        ),
+        selected=dict(
+            marker=dict(
+                size=config.selected_marker_size, opacity=config.selected_opacity
+            )
+        ),
+        unselected=dict(
+            marker=dict(
+                size=config.unselected_marker_size, opacity=config.unselected_opacity
+            )
+        ),
+    )
+
+    fig.update_layout(
+        xaxis_title=config.xaxis_title or x_column,
+        yaxis_title=config.yaxis_title or y_column,
+        autosize=config.autosize,
+        height=config.height,
+        xaxis_visible=config.xaxis_visible,
+        yaxis_visible=config.yaxis_visible,
+        xaxis_showgrid=config.xaxis_showgrid,
+        yaxis_showgrid=config.yaxis_showgrid,
+    )
+
+    return fig
+
 
 def create_scatter_plot_with_color(
     data, x_column, y_column, color_column, symbol_column, config: ScatterConfig

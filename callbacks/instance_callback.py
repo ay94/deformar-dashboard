@@ -3,7 +3,8 @@ import json
 import pandas as pd
 import dash
 import plotly.graph_objs as go
-from dash import dcc, html, no_update
+from dash import dcc, html, no_update, callback_context
+
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 from layouts.managers.layout_managers import (get_input_trigger,
@@ -41,6 +42,7 @@ def render_similarity_table(df):
 
 def register_callbacks(app, variants_data):
     tab_manager = InstanceTabManager(variants_data)
+    
     @app.callback(
         [
             Output("instance_selector", "options"),
@@ -149,6 +151,7 @@ def register_callbacks(app, variants_data):
         prevent_initial_call=True
     )
     def visualize_training_impact_callback(n_clicks, variant, sentence_id, view_option):
+        
         return tab_manager.generate_attention_analysis(variant, sentence_id, view_option)
     
     @app.callback(
@@ -281,7 +284,6 @@ def register_callbacks(app, variants_data):
             return go.Figure(), go.Figure()
     
     
-    from dash import callback_context
 
     @app.callback(
         [

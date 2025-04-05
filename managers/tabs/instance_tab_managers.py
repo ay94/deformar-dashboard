@@ -335,14 +335,14 @@ class InstanceTabManager(BaseTabManager):
      
     def compute_token_similarity_analysis(self, variant, token_selector_id, split="train", top_k=20):
         try:
-            anchor_token, sentence_id, token_index = token_selector_id.split("@#")
+            anchor_token, token_position, sentence_id  = token_selector_id.split("@#")
             sentence_id = int(sentence_id)
-            token_index = int(token_index)
+            token_position = int(token_position)
         except Exception as e:
             logging.error(f"❌ Invalid Token Selector ID format: {token_selector_id} | Error: {e}")
             return go.Figure(), pd.DataFrame()
 
-        logging.info(f"🔍 Running token similarity for: '{anchor_token}' in sentence {sentence_id} (token index {token_index}) [split: {split}]")
+        logging.info(f"🔍 Running token similarity for: '{anchor_token}' in sentence {sentence_id} (token position  {token_position}) [split: {split}]")
 
         tab_data = self.get_tab_data(variant)
         if not tab_data or not self.is_model_loaded(variant):
@@ -368,7 +368,7 @@ class InstanceTabManager(BaseTabManager):
 
         with torch.no_grad():
             output = model(**token_input, output_hidden_states=False)
-            anchor_vector = output.last_hidden_state[0, token_index].cpu().numpy()
+            anchor_vector = output.last_hidden_state[0, token_position].cpu().numpy()
 
         # Filter similar tokens in that split with same text
         candidates = df[

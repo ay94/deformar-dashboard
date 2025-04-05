@@ -217,6 +217,7 @@ class DisplayColumns:
         "Tokenization Rate", "Token Confidence", "Loss Values", "Prediction Uncertainty",
         "True Silhouette", "Pred Silhouette"
     ])
+    
 
     def get_columns(self, include_meta=True):
         if include_meta:
@@ -330,7 +331,13 @@ class TrainColumns(Enum):
     LOSSES = "Losses"
     GLOBAL_ID = "Global Id"
     TRUE_LABELS = "True Labels"
-
+    SENTENCE_IDS = 'Sentence Ids'
+    WORD_PIECES = 'Word Pieces'
+    CORE_TOKENS = 'Core Tokens'
+    STRICT_TRUE_ENTITIES = 'Strict True Entities'
+    TRUE_ENTITIES = 'True Entities'
+    TRUE_ALIGNED_SCHEME = 'True Aligned Scheme'
+    
     @staticmethod
     def list_columns():
         """

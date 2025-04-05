@@ -43,6 +43,18 @@ def generate_dropdown_options(columns):
     # This could pull column names from a dataset configuration or similar
     return [{"label": col, "value": col} for col in columns]
 
+def generate_variant_dropdown_options(columns):
+    variant_to_label = {
+        "ANERCorp_CamelLab_arabertv02": "Arabic",
+        "conll2003_bert": "English"
+        # Add more mappings here if needed
+    }
+    
+    return [
+        {"label": variant_to_label.get(col, col), "value": col}
+        for col in columns
+    ]
+
 
 def generate_status_table(variants_data):
     """Generates a Dash DataTable showing the loading status for attributes across multiple variants."""
@@ -513,7 +525,7 @@ class VariantSection:
         self.variants_dropdown = dcc.Dropdown(
             id="variant_selector",
             placeholder="Select variant...",
-            options=generate_dropdown_options(variants),
+            options=generate_variant_dropdown_options(variants),
             value=variants[0],
             style={"width": "50%", "margin": "auto"},
         )

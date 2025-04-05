@@ -5,7 +5,7 @@ from dash import dcc, html
 from layouts.managers.layout_managers import (CustomButton, LoadingContainer,
                                               SectionContainer, VariantSection,
                                               FilterLayerSection,
-                                              generate_dropdown_options)
+                                              generate_dropdown_options, generate_variant_dropdown_options)
 from config.enums import (CorrelationCoefficients, DecisionType,
                           DisplayColumns,
                           SelectionPlotColumns)
@@ -24,6 +24,7 @@ class FilterLayer:
         self.filter_value_dropdown = dcc.Dropdown(
             id="filter_value_dropdown",
             placeholder="Select Value...",
+            multi=True,
             style={"minWidth": "180px", "marginRight": "10px"},
         )
         self.apply_button = CustomButton("Apply Filter", "filter_table_button").render()
@@ -49,6 +50,8 @@ class FilterLayer:
                 'color': 'white',
                 "fontWeight": "bold",
             },
+            style_table={"overflowX": "auto"},
+            style_cell={"minWidth": "120px", "width": "120px", "maxWidth": "200px", "whiteSpace": "normal"},
         )
         self.filtered = dcc.Store(id="filter_state", data={"filtered": False})
 
@@ -78,20 +81,29 @@ class FilterLayer:
                     id="loading_decision_container",
                     type="default",
                     children=[
-                        self.data_table
+                        html.Div(
+                            self.data_table,
+                            style={
+                                "overflowX": "auto",
+                                "width": "100%",
+                            },
+                        )
                     ],
                 ),
                 self.filtered,
             ],
             style={
-                "width": "95%",
-                "display": "flex",
-                "justifyContent": "center",
+                # "width": "95%",
+                # "display": "flex",
+                # "justifyContent": "center",
+                 "width": "100%",
+                "maxWidth": "100%",
+                "overflowX": "auto",  # Make outer container scrollable too
             },
         )
 
         return FilterLayerSection(
-            'Filtering Layer',
+            'Filtering Section',
             content_components=[
                 filter_controls,
                 data_table_wrapper,
@@ -116,7 +128,7 @@ class DecisionSection:
         self.decision_columns_dropdown = dcc.Dropdown(
             id="decision_columns",
             multi=True,
-            placeholder="Select Decision Color column...",
+            placeholder="Colour By (UMAP Representation View)...",
             options=generate_dropdown_options(
                 config.get("categorical_columns", ["Wrong Columns"])
             ),  # Assuming you have a function to generate options
@@ -127,7 +139,7 @@ class DecisionSection:
         self.measure_columns_dropdown = dcc.Dropdown(
             id="measure_columns",
             multi=True,
-            placeholder="Select Measure Color column...",
+            placeholder="Colour By (Joint Metric View)...",
             options=generate_dropdown_options(
                 config.get("categorical_columns", ["Wrong Columns"])
             ),  # Assuming you have a function to generate options
@@ -138,7 +150,7 @@ class DecisionSection:
         self.correlation_columns_dropdown = dcc.Dropdown(
             id="correlation_columns",
             multi=True,
-            placeholder="Select Correlation columns...",
+            placeholder="Select Numerical Variables...",
             options=generate_dropdown_options(
                 config.get("numerical_columns", ["Wrong Columns"])
             ),  # Assuming you have a function to generate options
@@ -166,7 +178,7 @@ class DecisionSection:
 
     def render(self):
         return SectionContainer(
-            "Decision Boundary Analysis",
+            "Behavioural Analysis",
             [
                 self.model_type_dropdown,
                 self.measure_columns_dropdown,
@@ -179,7 +191,72 @@ class DecisionSection:
             ],
         ).render()
 
+token_color_map = {
+            "O": "saddlebrown",
+            "B-PER": "deepskyblue",
+            "I-PER": "lightblue",
+            "B-ORG": "darkcyan",
+            "I-ORG": "cyan",
+            "B-LOC": "darkgreen",
+            "I-LOC": "yellowgreen",
+            "B-MISC": "palevioletred",
+            "I-MISC": "violet",
+            "IGNORED": "grey",
+            "[CLS]": "grey",
+            "[SEP]": "grey",
+        }
 
+entity_color_map = {
+            "LOC": "darkgreen",
+            "PER": "deepskyblue",
+            "ORG": "darkcyan",
+            "MISC": "palevioletred",
+            "FP": "#EF553B",   # coral red
+            "FN": "#00CC96",   # teal green
+            "No Errors": "green"
+        }
+
+
+def generate_label_legend(color_map: dict):
+    return html.Div([
+        html.H6("Label Color Map", style={"marginBottom": "10px", "fontWeight": "bold"}),
+        html.Div([
+            html.Div(label, style={
+                "backgroundColor": color,
+                "color": "white",
+                "padding": "4px 8px",
+                "borderRadius": "6px",
+                "margin": "4px",
+                "display": "inline-block",
+                "fontSize": "0.85rem",
+                "fontWeight": "bold",
+                "minWidth": "60px",
+                "textAlign": "center",
+            }) for label, color in color_map.items()
+        ], style={
+            "display": "flex",
+            "flexWrap": "wrap",
+            "justifyContent": "center",  # 👈 center
+            "gap": "4px",
+            "padding": "10px",
+            "border": "1px solid #ddd",
+            "borderRadius": "8px",
+            "backgroundColor": "#f9f9f9",
+            "maxWidth": "90%",
+        })
+    ])
+
+def render_instance_row(label, content_id, rtl=True):
+    return html.Div([
+        html.H6(f"{label}:", style={"minWidth": "140px", "marginBottom": "0px"}),
+        html.Div(id=content_id, style={
+            "padding": "10px",
+            "marginRight": "10px",
+            "direction": "rtl" if rtl else "ltr",
+            "unicodeBidi": "embed"
+        }),
+    ], style={"display": "flex", "alignItems": "center", "marginBottom": "10px"})
+    
 class DecisionTabLayout:
     def __init__(self, config_manager):
         
@@ -207,6 +284,44 @@ class DecisionTabLayout:
             loader_id="training_graph_loader",
             container_style={"width": "70%", "height": "100%"},
         ).render()
+        select_instance = html.Div([
+            dcc.Dropdown(
+                id='training_sentences',
+                placeholder="Select an Sentence...",
+                style={
+                    "width": "300px",
+                    "margin": "0 auto",  # Center it horizontally
+                }
+            )
+        ], style={"textAlign": "center", "marginTop": "20px", "marginBottom": "30px"})
+        instance_details = dbc.Container([
+            html.Br(),
+            html.Hr(),
+            html.H4("Token-Level Annotations", className="text-center"),
+            generate_label_legend(token_color_map),
+            html.Br(),
+            select_instance,
+            render_instance_row("📝 Sentence", "training_sentence"),
+            render_instance_row("✅ Ground Truth", "training_truth"),
+            html.Div(style={"marginBottom": "30px"}),  # Add spacing here
+            
+            html.Hr(),
+            html.H4("Entity-Level Annotations", className="text-center"),
+            generate_label_legend(entity_color_map),
+            html.Br(),
+            # First: Non-Strict
+            html.H5("Scheme: IOB", style={"textAlign": "center", "marginTop": "20px"}),
+            render_instance_row("✅ True Entities", "training_entity_true_iob", rtl=False),
+
+            html.Br(),
+
+            # Second: Strict
+            html.H5("Scheme: IOB2", style={"textAlign": "center", "marginTop": "20px"}),
+            render_instance_row("✅ True Entities", "training_entity_true_iob2", rtl=False),
+            html.Div(style={"marginBottom": "30px"}),  # Add spacing here
+            
+
+        ], fluid=True, style={"marginTop": "20px"})
         
         #  Filtering Layer 
         filter_layer_section = FilterLayer(
@@ -490,14 +605,15 @@ class DecisionTabLayout:
                 training_header,
                 training_graph_container,
                 view_train_decision,
+                instance_details,
                 filter_layer_section,
                 decision_section,
                 decision_graph_prompt,
                 measure_container,
-                clustering_alignment_header,
-                clustering_analysis,
                 selection_header,
                 selection_analysis,
+                clustering_alignment_header,
+                clustering_analysis,
                 impact_header,
                 training_impact,
             ],
