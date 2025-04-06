@@ -86,9 +86,14 @@ class DashboardData:
         
         if "True Labels" in self.analysis_data.columns:
             self.analysis_data["True Labels"] = self.analysis_data["True Labels"].replace(tag_mapping)
+            self.train_data["True Labels"] = self.train_data["True Labels"].replace(tag_mapping)
         if "Pred Labels" in self.analysis_data.columns:
             self.analysis_data["Pred Labels"] = self.analysis_data["Pred Labels"].replace(tag_mapping)
-            
+        if "Token Ambiguity" in self.analysis_data.columns:
+            self.analysis_data["Vocabulary Status"] = np.where(
+                self.analysis_data["Token Ambiguity"] == -1, "OOV", "IV"
+            )
+                        
         if "Error Types" in self.analysis_data.columns:
             self.analysis_data.loc[self.analysis_data["Labels"] == -100, "Error Type"] = "IGNORED"
 

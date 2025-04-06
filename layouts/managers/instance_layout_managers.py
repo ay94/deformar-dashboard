@@ -269,6 +269,18 @@ def render_token_analysis():
         ], justify="center"),
         
         html.Hr(),
+        
+        dbc.Row([
+            dbc.Col([
+                html.H5("Token Origin Viewer", className="text-center"),
+                dcc.Dropdown(id="token_origin_sentence", placeholder="Select Sentence..."),
+                html.Div(id="token_origin_sentence_render", style={"padding": "16px"})
+            ], width=6)
+            
+        ], justify="center"),
+        
+        html.Hr(),
+        html.Br(),
 
     ], fluid=True)
 

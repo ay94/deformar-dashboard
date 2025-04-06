@@ -19,6 +19,118 @@ DISPLAY_COLUMNS = [
 
 from dash import dash_table
 
+import pandas as pd
+import re
+from dash import html
+
+class BenajebaMatcher:
+    def __init__(self, raw_text):
+        self.df = self._parse_benajeba_text(raw_text)
+
+    def _parse_benajeba_text(self, raw_text):
+        
+        data = []
+        sentence = []
+        sentence_id = 0
+
+        for line in raw_text.strip().splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            parts = line.split()
+            if len(parts) != 2:
+                continue
+            word, tag = parts
+            if "PERS" in tag:
+                tag = tag.replace("PERS", "PER")
+            sentence.append({"sentence_id": sentence_id, "word": word, "tag": tag})
+            
+            if word == ".":
+                data.extend(sentence)
+                sentence = []
+                sentence_id += 1
+
+        # If the last sentence does not end in '.', still add it
+        if sentence:
+            data.extend(sentence)
+
+        return pd.DataFrame(data)
+
+
+    def match_token_to_sentence_ids(self, anchor_word):
+        matches = self.df[self.df["word"] == anchor_word]
+        return matches["sentence_id"].unique().tolist()
+
+    def render_sentence(self, sentence_id, anchor_word):
+        sentence_df = self.df[self.df["sentence_id"] == sentence_id].copy()
+        sentence_df["highlight"] = sentence_df["word"] == anchor_word
+        
+
+        styled_tokens = []
+        for _, row in sentence_df.iterrows():
+            # styled_tokens.append(html.Span(
+            #         row["word"],
+            #         style={
+            #             "backgroundColor": "#FFB6A1" if row["highlight"] else "#F0F0F0",
+            #             "borderRadius": "6px",
+            #             "padding": "4px 6px",
+            #             "margin": "2px",
+            #             "display": "inline-block",
+            #             "color": "#000",
+            #             "fontWeight": "bold" if row["highlight"] else "normal",
+            #         }
+            #     ),
+                                 
+            # )
+            styled_tokens.append(
+                html.Span([
+                    html.Span(
+                        row["word"],
+                        style={
+                            "backgroundColor": "#FFB6A1" if row["highlight"] else "#F0F0F0",
+                            "borderRadius": "6px",
+                            "padding": "4px 6px",
+                            "margin": "2px",
+                            "display": "inline-block",
+                            "color": "#000",
+                            "fontWeight": "bold" if row["highlight"] else "normal",
+                        }
+                    ),
+                    html.Span(
+                        row["tag"],
+                        style={
+                            "display": "block",  # Forces tag to go *below* word
+                            "fontSize": "12px",
+                            "color": "#666",
+                            "textAlign": "center",
+                            "marginTop": "2px"
+                        }
+                    )
+                ], style={"display": "inline-block", "textAlign": "center", "marginRight": "6px"})
+            )
+
+        return html.Div([
+            html.Div("📝 Benajeba Sentence:", style={"fontWeight": "bold", "marginBottom": "8px"}),
+            html.Div(styled_tokens, style={
+                "direction": "rtl",
+                "textAlign": "right",
+                "lineHeight": "2em",
+                "padding": "8px",
+            })
+        ])
+
+def parse_benajeba_text(raw_text):
+    data = []
+    sentence_id = 0
+    for block in raw_text.strip().split('\n\n'):
+        for line in block.strip().split('\n'):
+            if not line.strip(): continue
+            word, tag = line.strip().split()
+            data.append({"sentence_id": sentence_id, "word": word, "tag": tag})
+        sentence_id += 1
+    return pd.DataFrame(data)
+
+
 def render_similarity_table(df):
     return dash_table.DataTable(
         columns=[{"name": i, "id": i} for i in df.columns],
@@ -39,9 +151,13 @@ def render_similarity_table(df):
         page_size=10
     )
 
-
+with open("/Users/ay227/Library/CloudStorage/GoogleDrive-ahmed.younes.sam@gmail.com/My Drive/Final Year Experiments/Thesis-Experiments/RawData/ANERcorp-CamelLabSplits/ANERCorp_Benajiba.txt", "r", encoding="utf-8") as f:
+        benajeba_text = f.read()
+matcher = BenajebaMatcher(benajeba_text)
 def register_callbacks(app, variants_data):
     tab_manager = InstanceTabManager(variants_data)
+    
+
     
     @app.callback(
         [
@@ -375,28 +491,38 @@ def register_callbacks(app, variants_data):
                     "marginTop": "10px"
                 }
             )
-
+        tab_data = tab_manager.get_tab_data(variant)
+        dataset = tab_data.train_data if split == "train" else tab_data.analysis_data
+        
+        
+        
         anchor_token, _, token_index = token_selector_id.split("@#")
         token_index = int(token_index)
+        
+        # if split == 'test':
+        sentence_df = dataset[dataset["Sentence Ids"] == sentence_id]
+        core_sentence_df = sentence_df[sentence_df['Labels'] != -100]
+        # Determine anchor row
+        anchor_row = core_sentence_df[core_sentence_df["Core Tokens"] == anchor_token]
+        if anchor_row.empty:
+            return html.Div("⚠️ Could not find the token to highlight in the selected sentence.")
 
-        tab_data = tab_manager.get_tab_data(variant)
-        dataset = tab_data.get_train_dataset if split == "train" else tab_data.get_test_dataset
-        tokenizer = dataset.tokenizer
-        try:
-            example = dataset.__getitem__(int(sentence_id))
-        except IndexError:
-            print(f"⚠️ Invalid sentence ID: {sentence_id} for split {split}")
-            raise PreventUpdate
-        # example = dataset.__getitem__(int(sentence_id))
+        anchor_word = anchor_row["Words"].values[0]
+        is_arabic = bool(re.search(r'[\u0600-\u06FF]', anchor_word))
+        direction = "rtl" if is_arabic else "ltr"
+        text_align = "right" if is_arabic else "left"
 
-        input_ids = example['input_ids'][example['input_ids'] != 0]
-        tokens = tokenizer.convert_ids_to_tokens(input_ids)
-
+        # Add highlight column
+        core_sentence_df = core_sentence_df.copy()
+        core_sentence_df["highlight"] = core_sentence_df["Core Tokens"] == anchor_token
+        # Render the sentence with highlighted word
         styled_tokens = []
-        for idx, tok in enumerate(tokens):
-            highlight = tok == anchor_token
+        for _, row in core_sentence_df.iterrows():
+            word = row["Words"]
+            highlight = row["highlight"]
+
             styled_tokens.append(html.Span(
-                tok,
+                word,
                 style={
                     "backgroundColor": "#FFB6A1" if highlight else "#F0F0F0",
                     "borderRadius": "6px",
@@ -407,10 +533,6 @@ def register_callbacks(app, variants_data):
                     "fontWeight": "bold" if highlight else "normal",
                 }
             ))
-            is_arabic = bool(re.search(r'[\u0600-\u06FF]', anchor_token))
-
-            direction = "rtl" if is_arabic else "ltr"
-            text_align = "right" if is_arabic else "left"
 
         return html.Div([
             html.Div("📝 Sentence:", style={"fontWeight": "bold", "marginBottom": "8px"}),
@@ -421,13 +543,50 @@ def register_callbacks(app, variants_data):
                 "padding": "8px",
             })
         ])
+    
+
+    @app.callback(
+        Output("token_origin_sentence", "options"),
+        Input("core_token_selector", "value"),
+        State("variant_selector", "value"),
+        prevent_initial_call=True
+    )
+    def populate_benajeba_sentences(token_selector_id, variant):
+        if not token_selector_id:
+            return no_update
+        tab_data = tab_manager.get_tab_data(variant)
+        analysis_data = tab_data.analysis_data
+        word = analysis_data[analysis_data['Token Selector Id'] == token_selector_id]['Words'].unique()[0]
+        
+        
+        
+        
+        
+        sentence_ids = matcher.match_token_to_sentence_ids(word)
+
+        options = [{"label": f"Benajeba Sentence {sid}", "value": sid} for sid in sentence_ids]
+        return options
+    
+    @app.callback(
+        Output("token_origin_sentence_render", "children"),
+        [
+            Input("token_origin_sentence", "value"),
+            State("core_token_selector", "value"),
+            State("variant_selector", "value"),
+        ],
+        prevent_initial_call=True
+    )
+    def render_benajeba_sentence(sentence_id, token_selector_id, variant):
+        if not sentence_id or not token_selector_id:
+            return no_update
+
+        tab_data = tab_manager.get_tab_data(variant)
+        analysis_data = tab_data.analysis_data
+        word = analysis_data[analysis_data['Token Selector Id'] == token_selector_id]['Words'].unique()[0]
+        return matcher.render_sentence(sentence_id, word)
+
+
 
         
-
-
         
         
-
-
-
-
