@@ -492,10 +492,14 @@ def register_callbacks(app, variants_data):
                 }
             )
         tab_data = tab_manager.get_tab_data(variant)
+        if not split:
+            return no_update
         dataset = tab_data.train_data if split == "train" else tab_data.analysis_data
         
         
         
+        if not token_selector_id:
+            return no_update
         anchor_token, _, token_index = token_selector_id.split("@#")
         token_index = int(token_index)
         

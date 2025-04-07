@@ -316,7 +316,7 @@ class InstanceTabManager(BaseTabManager):
                 similarity_scores,
                 labels={"x": "Heads", "y": "Layers", "color": "Similarity"},
                 color_continuous_scale="RdBu_r",
-                title="Attention Similarity Between Pretrained and Fine-tuned",
+                title="Attention Scores Similarity Matrix",
             )
             heatmap.update_layout(
                 autosize=False,
