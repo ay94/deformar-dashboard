@@ -233,14 +233,14 @@ class DecisionScatter(BasePlotting):
             y0 = df_selected[y_column].min()
             y1 = df_selected[y_column].max()
 
-            fig.add_shape(
-                type="rect",
-                x0=x0, x1=x1,
-                y0=y0, y1=y1,
-                line=dict(color="rgba(0, 0, 0, 0.05)", dash="dot"),
-                fillcolor="rgba(0, 0, 0, 0.05)",
-                layer="below",
-            )
+            # fig.add_shape(
+            #     type="rect",
+            #     x0=x0, x1=x1,
+            #     y0=y0, y1=y1,
+            #     line=dict(color="rgba(0, 0, 0, 0.05)", dash="dot"),
+            #     fillcolor="rgba(0, 0, 0, 0.05)",
+            #     layer="below",
+            # )
 
         return fig
         
@@ -392,14 +392,14 @@ class MeasureScatter(BasePlotting):
             y0 = df_selected[y_column].min()
             y1 = df_selected[y_column].max()
 
-            fig.add_shape(
-                type="rect",
-                x0=x0, x1=x1,
-                y0=y0, y1=y1,
-                line=dict(color="rgba(0, 0, 0, 0.05)", dash="dot"),
-                fillcolor="rgba(0, 0, 0, 0.05)",
-                layer="below",
-            )
+            # fig.add_shape(
+            #     type="rect",
+            #     x0=x0, x1=x1,
+            #     y0=y0, y1=y1,
+            #     line=dict(color="rgba(0, 0, 0, 0.05)", dash="dot"),
+            #     fillcolor="rgba(0, 0, 0, 0.05)",
+            #     layer="below",
+            # )
 
         fig.update_layout(
             title=scatter_config.title,

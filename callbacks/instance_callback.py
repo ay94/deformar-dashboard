@@ -523,26 +523,63 @@ def register_callbacks(app, variants_data):
         styled_tokens = []
         for _, row in core_sentence_df.iterrows():
             word = row["Words"]
+            tag = row["True Labels"]
             highlight = row["highlight"]
 
-            styled_tokens.append(html.Span(
-                word,
-                style={
-                    "backgroundColor": "#FFB6A1" if highlight else "#F0F0F0",
-                    "borderRadius": "6px",
-                    "padding": "4px 6px",
-                    "margin": "2px",
-                    "display": "inline-block",
-                    "color": "#000",
-                    "fontWeight": "bold" if highlight else "normal",
-                }
-            ))
+        #     styled_tokens.append(html.Span(
+        #         word,
+        #         style={
+        #             "backgroundColor": "#FFB6A1" if highlight else "#F0F0F0",
+        #             "borderRadius": "6px",
+        #             "padding": "4px 6px",
+        #             "margin": "2px",
+        #             "display": "inline-block",
+        #             "color": "#000",
+        #             "fontWeight": "bold" if highlight else "normal",
+        #         }
+        #     ))
+
+        # return html.Div([
+        #     html.Div("📝 Sentence:", style={"fontWeight": "bold", "marginBottom": "8px"}),
+        #     html.Div(styled_tokens, style={
+        #         "direction": direction,
+        #         "textAlign": text_align,
+        #         "lineHeight": "2em",
+        #         "padding": "8px",
+        #     })
+        # ])
+            styled_tokens.append(
+                    html.Span([
+                        html.Span(
+                            word,
+                            style={
+                                "backgroundColor": "#FFB6A1" if highlight else "#F0F0F0",
+                                "borderRadius": "6px",
+                                "padding": "4px 6px",
+                                "margin": "2px",
+                                "display": "inline-block",
+                                "color": "#000",
+                                "fontWeight": "bold" if highlight else "normal",
+                            }
+                        ),
+                        html.Span(
+                            tag,
+                            style={
+                                "display": "block",  # Forces tag to go *below* word
+                                "fontSize": "12px",
+                                "color": "#666",
+                                "textAlign": "center",
+                                "marginTop": "2px"
+                            }
+                        )
+                    ], style={"display": "inline-block", "textAlign": "center", "marginRight": "6px"})
+                )
 
         return html.Div([
-            html.Div("📝 Sentence:", style={"fontWeight": "bold", "marginBottom": "8px"}),
+            html.Div("📝 Benajeba Sentence:", style={"fontWeight": "bold", "marginBottom": "8px"}),
             html.Div(styled_tokens, style={
-                "direction": direction,
-                "textAlign": text_align,
+                "direction": "rtl",
+                "textAlign": "right",
                 "lineHeight": "2em",
                 "padding": "8px",
             })

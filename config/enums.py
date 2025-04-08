@@ -170,7 +170,7 @@ class ErrorRateColumns(Enum):
 @dataclass
 class CorrelationColumns:
     numeric_variables: list = field(default_factory=lambda: [
-        "Token Ambiguity", "Word Ambiguity",
+        "Token Ambiguity",
         "Consistency Ratio", "Inconsistency Ratio", 
         "Tokenization Rate",
         "Token Confidence", "Loss Values", "Prediction Uncertainty", 
