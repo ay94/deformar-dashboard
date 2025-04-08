@@ -154,6 +154,7 @@ def render_similarity_table(df):
 with open("/Users/ay227/Library/CloudStorage/GoogleDrive-ahmed.younes.sam@gmail.com/My Drive/Final Year Experiments/Thesis-Experiments/RawData/ANERcorp-CamelLabSplits/ANERCorp_Benajiba.txt", "r", encoding="utf-8") as f:
         benajeba_text = f.read()
 matcher = BenajebaMatcher(benajeba_text)
+
 def register_callbacks(app, variants_data):
     tab_manager = InstanceTabManager(variants_data)
     
@@ -171,6 +172,7 @@ def register_callbacks(app, variants_data):
         ]
     )
     def update_instance_dropdowns(variant, decision_selection, measure_selection):
+        print(variant)
         if not variant:
             raise PreventUpdate
         selected_ids = process_selection(decision_selection or measure_selection)
