@@ -62,7 +62,7 @@ class CorrelationMatrix(BaseAnalysis):
             # # Set the values in the upper triangle to NaN
             # correlation_matrix = correlation_matrix.mask(mask)
             config = MatrixConfig(
-                title=f"Joint Metrics Correlation ({correlation_method.capitalize()} Coefficients)",
+                title=f"Behavioural Metrics Correlation ({correlation_method.capitalize()} Coefficients)",
                 x="Variables",
                 y="Variables",
                 color="Correlation",
@@ -258,7 +258,7 @@ class MeasureScatter(BasePlotting):
         color_map = ColorMap()
         scatter_config = DecisionScatterConfig(
             # title=f"Joint Metric Scatter Plot: {x_column} vs {y_column} (Coloured by {color_column})",
-            title=f"Joint Metric Scatter Plot",
+            title=f"Behavioural Metric Scatter Plot",
             hover_data=hover_columns.list_columns(),
             xaxis_title=x_column,
             yaxis_title=y_column,
@@ -333,7 +333,7 @@ class MeasureScatter(BasePlotting):
         color_map = ColorMap()
         scatter_config = DecisionScatterConfig(
             # title=f"Joint Metric Scatter Plot: {x_column} vs {y_column} (Coloured by {color_column})",
-            title=f"Joint Metric Scatter Plot",
+            title=f"Behavioural Metric Scatter Plot",
             hover_data=hover_columns.list_columns(),
             xaxis_title=x_column,
             yaxis_title=y_column,

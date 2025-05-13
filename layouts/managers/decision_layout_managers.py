@@ -139,7 +139,7 @@ class DecisionSection:
         self.measure_columns_dropdown = dcc.Dropdown(
             id="measure_columns",
             multi=True,
-            placeholder="Colour By (Joint Metric View)...",
+            placeholder="Colour By (Behavioural Metric View)...",
             options=generate_dropdown_options(
                 config.get("categorical_columns", ["Wrong Columns"])
             ),  # Assuming you have a function to generate options
