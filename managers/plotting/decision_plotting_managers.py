@@ -63,6 +63,7 @@ class CorrelationMatrix(BaseAnalysis):
             # correlation_matrix = correlation_matrix.mask(mask)
             config = MatrixConfig(
                 title=f"Behavioural Metrics Correlation ({correlation_method.capitalize()} Coefficients)",
+                title=f"Behavioural Metrics Correlation ({correlation_method.capitalize()} Coefficients)",
                 x="Variables",
                 y="Variables",
                 color="Correlation",
