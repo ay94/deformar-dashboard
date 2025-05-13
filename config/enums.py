@@ -207,7 +207,7 @@ class DisplayColumns:
     # ])
     meta_columns: list = field(default_factory=lambda: [
         "Global Id", "Words", "Tokens",
-        "Token Selector Id", 
+        "Token Selector Id", 'True Labels', 'Pred Labels', 'Error Type', 'Agreements'
     ])
     # categorical_columns: list = field(default_factory=lambda: )
 

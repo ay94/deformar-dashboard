@@ -32,7 +32,7 @@ dill==0.3.8
 emoji==1.4.2
 exceptiongroup==1.2.2
 executing==2.0.1
-experiment_utils @ git+https://github.com/ay94/deformer-extractor.git@eeacf30df2a53baf24f7f518ec36b3d45e93381c
+experiment_utils @ git+https://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@github.com/ay94/deformer-extractor.git@eeacf30df2a53baf24f7f518ec36b3d45e93381c
 Farasa==0.0.1
 farasapy==0.0.14
 fastjsonschema==2.20.0

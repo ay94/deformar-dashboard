@@ -150,8 +150,7 @@ def render_similarity_table(df):
         },
         page_size=10
     )
-
-with open("/Users/ay227/Library/CloudStorage/GoogleDrive-ahmed.younes.sam@gmail.com/My Drive/Final Year Experiments/Thesis-Experiments/RawData/ANERcorp-CamelLabSplits/ANERCorp_Benajiba.txt", "r", encoding="utf-8") as f:
+with open("/Users/ahmed/Library/CloudStorage/GoogleDrive-ahmed.younes.sam@gmail.com/My Drive/Final Year Experiments/Thesis-Experiments/RawData/ANERcorp-CamelLabSplits/ANERCorp_Benajiba.txt", "r", encoding="utf-8") as f:
         benajeba_text = f.read()
 matcher = BenajebaMatcher(benajeba_text)
 
