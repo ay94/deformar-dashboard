@@ -76,6 +76,11 @@ class DashboardConfigManager:
     def data_dir(self) -> Path:
         base_folder = init()
         return base_folder / self.config.get("dashboard", {}).get("data_dir", "")
+    
+    @property
+    def corpora_dir(self) -> Path:
+        base_folder = init()
+        return base_folder / self.config.get("dashboard", {}).get("corpora_dir", "")
 
     @property
     def data_config(self) -> Dict:
@@ -88,12 +93,12 @@ class DashboardConfigManager:
         return self.config.get("dashboard", {}).get("variants", {})
 
     @property
-    def dataset_tab(self) -> Dict:
-        return self.config.get("dashboard", {}).get("dataset_tab", {})
+    def quantitative(self) -> Dict:
+        return self.config.get("dashboard", {}).get("quantitative_tab", {})
 
     @property
-    def decision_tab(self) -> Dict:
-        return self.config.get("dashboard", {}).get("decision_tab", {})
+    def qualitative(self) -> Dict:
+        return self.config.get("dashboard", {}).get("qualitative_tab", {})
 
 
 @dataclass
@@ -192,14 +197,14 @@ class ScatterWidthConfig:
 @dataclass
 class DecisionScatterConfig(ScatterConfig):
     # New fields
-    marker_size: float = 5
+    marker_size: float = 4
     marker_opacity: int = 1.0
-    line_width: float = 0.7
+    line_width: float = 0.3
     line_color: str = "rgba(47, 79, 79, 1.0)"
     autosize: bool = True
-    selected_marker_size: int = 10
-    selected_opacity: float = 0.75
-    unselected_marker_size: int = 5
+    selected_marker_size: int = 8
+    selected_opacity: float = 0.7
+    unselected_marker_size: int = 3.5
     unselected_opacity: float = 0.9
     width: int = None
     height: int = None
@@ -216,43 +221,69 @@ class ColorMap:
         default_factory=lambda: {
             "B-LOC": "darkgreen",
             "B-PERS": "deepskyblue",
+            "B-PER": "deepskyblue",
             "B-ORG": "darkcyan",
             "B-MISC": "palevioletred",
             "I-LOC": "yellowgreen",
             "I-PERS": "lightblue",
+            "I-PER": "lightblue",
             "I-ORG": "cyan",
             "I-MISC": "violet",
             "O": "saddlebrown",
             "LOC": "darkgreen",
             "PERS": "deepskyblue",
+            "PER": "deepskyblue",
             "ORG": "darkcyan",
             "MISC": "palevioletred",
-            "NOUN": "darkgreen",
-            "VERB": "deepskyblue",
-            "PN": "darkcyan",
-            "PRT": "yellowgreen",
-            "ADJ": "lightblue",
-            "ADV": "cyan",
-            "PRON": "saddlebrown",
-            "DSIL": "violet",
-            "CCONJ": "turquoise",
-            "ADP": "darksalmon",
-            "PUNCT": "tomato",
-            "DET": "midnightblue",
-            "X": "olive",
-            "AUX": "limegreen",
-            "NUM": "slateblue",
-            "PART": "wheat",
-            "SYM": "firebrick",
-            "PROPN": "gold",
-            "INTJ": "lightseagreen",
             "IGNORED": "grey",
             "[CLS]": "grey",  # Explicitly handle CLS
             "[SEP]": "grey",  # Explicitly handle SEP
             "SELECTED": "black",
+            "No Errors": "darkgreen",         
+            "Exclusion": "mediumturquoise",   
+            "Type": "deepskyblue",            
+            "Chunk": "darkcyan",              
+            "Type and Chunk": "palevioletred", 
+            "cluster-0": "indianred",         # softened red
+            "cluster-1": "lightsalmon",       # soft orange
+            "cluster-2": "moccasin",          # warm light beige
+            "cluster-3": "mediumseagreen",    # muted green
+            "cluster-4": "teal",              # keep (already softer)
+            "cluster-5": "cornflowerblue",    # softened blue
+            "cluster-6": "mediumorchid",      # softened purple
+            "cluster-7": "lightsteelblue",    # pastel lavender-blue
+            "cluster-8": "sienna",            # warm brown
+            "B": "royalblue",    # Beginning of a chunk
+            "I": "lightcoral",   # Inside a chunk
+            "TP": "#636EFA",   # soft indigo/periwinkle
+            "FP": "#EF553B",   # coral red
+            "FN": "#00CC96",   # teal green
+            "TN": "#FFB74D",     # soft orange
+            True: "mediumseagreen",   # Positive / aligned / active
+            False: "lightcoral",      # Negative / not aligned / inactive
+             # "NOUN": "darkgreen",
+            # "VERB": "deepskyblue",
+            # "PN": "darkcyan",
+            # "PRT": "yellowgreen",
+            # "ADJ": "lightblue",
+            # "ADV": "cyan",
+            # "PRON": "saddlebrown",
+            # "DSIL": "violet",
+            # "CCONJ": "turquoise",
+            # "ADP": "darksalmon",
+            # "PUNCT": "tomato",
+            # "DET": "midnightblue",
+            # "X": "olive",
+            # "AUX": "limegreen",
+            # "NUM": "slateblue",
+            # "PART": "wheat",
+            # "SYM": "firebrick",
+            # "PROPN": "gold",
+            # "INTJ": "lightseagreen",
         }
     )
 
     def get_color(self, key: str) -> str:
         """Return the color for a given key, defaulting to 'grey' if not found."""
         return self.color_map.get(key, "grey")
+    

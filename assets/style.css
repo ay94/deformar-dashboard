@@ -274,3 +274,11 @@
     height: 100%;
     /* display: block; */
 }
+.filter-layer {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	gap: 10px;
+	margin: 20px 0;
+	flex-wrap: wrap;
+}

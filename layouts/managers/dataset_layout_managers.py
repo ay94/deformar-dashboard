@@ -59,7 +59,7 @@ class DistributionSection:
 
     def render(self):
         return SectionContainer(
-            "Distributions",
+            "Distribution Analysis",
             [
                 self.distribution_column_dropdown,
                 self.categorical_column_dropdown,
@@ -106,7 +106,15 @@ class CorrelationSection:
                 "width": "100%"
             },  # Assuming you want to use the full width for styling
         )
-
+        self.categorical_column_dropdown = dcc.Dropdown(
+            id="correlation_categorical_column",
+            multi=False,
+            placeholder="Select Categorical column...",
+            options=generate_dropdown_options(
+                config.get("categorical_columns", ["Wrong Columns"])
+            ),  # Assuming you have a function to generate options
+            style={"width": "100%"},
+        )
         self.plot_button = CustomButton(
             "Calculate Correlation", "calculate_correlation"
         ).render()
@@ -116,6 +124,7 @@ class CorrelationSection:
             "Correlation Analysis",
             [
                 self.correlation_type_dropdown,
+                self.categorical_column_dropdown,
                 self.plot_button,  # Include the message
             ],
         ).render()
@@ -155,7 +164,7 @@ class DatasetTabLayout:
             config_manager.variants
         )  # You might want to use config settings if applicable
         self.dataset_tab_config = (
-            config_manager.dataset_tab
+            config_manager.quantitative
         )  # You might want to use config settings if applicable
 
     def render(self):
@@ -304,6 +313,7 @@ class DatasetTabLayout:
             ],
             className="graph-container",
         )
+        correlation_prompt = html.Div(id="correlation_prompt")
 
         custom_analysis_container = CustomAnalysisSection(
             self.dataset_tab_config
@@ -342,12 +352,13 @@ class DatasetTabLayout:
                 summary_statistics_container,
                 distribution_container,
                 distribution_graph_container,
-                results_container,
-                results_data_table,
                 correlation_container,
                 correlation_graphs,
+                correlation_prompt,
                 custom_analysis_container,
                 custom_analysis_graph_container,
+                results_container,
+                results_data_table,
             ],
             # style={
             #     'display': 'flex',

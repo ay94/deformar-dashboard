@@ -115,9 +115,11 @@ def register_callbacks(app, variants_data):
     def custom_analysis_callback(n_clicks, custom_distribution_type, variant):
         if n_clicks == 0:
             raise PreventUpdate
+        # find the index of last underscore and take everything except it. 
+        corpus_name = variant[:variant.rfind('_')]
 
         analysis = tab_manager.perform_custom_analysis(
-            custom_distribution_type, variant
+            custom_distribution_type, variant, corpus_name
         )
         # Check if a valid figure was returned
         if isinstance(analysis, go.Figure):
@@ -137,19 +139,38 @@ def register_callbacks(app, variants_data):
             Output("correlation_scatter_graph", "figure"),
             Output("correlation_matrix_graph", "style"),
             Output("correlation_scatter_graph", "style"),
+            Output("correlation_prompt", "children"),  # Message output container
         ],
         [
             Input("calculate_correlation", "n_clicks"),
             Input("correlation_matrix_graph", "clickData"),  # Reference the Graph ID
         ],
-        [State("correlation_coefficient", "value"), State("variant_selector", "value")],
+        [
+            State("correlation_coefficient", "value"), 
+            State("correlation_categorical_column", "value"),
+            State("variant_selector", "value")
+        ],
     )
-    def plot_correlation(n_clicks, clickData, correlation_method, variant):
+    def plot_correlation(n_clicks, clickData, correlation_method, categorical_column, variant):
         # Default to no update
         correlation_fig = no_update
         scatter_fig = no_update
         correlation_graph_style = {"width": "49%", "display": "none"}
         scatter_graph_style = {"width": "49%", "display": "none"}
+        message_prompt = html.Div(
+                "Please select a correlation coefficient and variant before calculating.",
+                className="prompt-message",
+            )
+        
+         # Check if button click is valid
+        if n_clicks is None or n_clicks == 0:
+            # No clicks yet, do not trigger the update
+            return correlation_fig, scatter_fig, correlation_graph_style, scatter_graph_style, message_prompt
+
+        # Validate user inputs (correlation_method and variant)
+        if correlation_method is None:
+            
+            return correlation_fig, scatter_fig, correlation_graph_style, scatter_graph_style, message_prompt
 
         # Check if button click is valid
         if n_clicks is not None and n_clicks > 0:
@@ -157,10 +178,12 @@ def register_callbacks(app, variants_data):
             correlation_fig, scatter_fig = tab_manager.calculate_correlation(
                 variant=variant,
                 correlation_method=correlation_method,
+                categorical_column=categorical_column
             )
             # Set styles to display the graphs
             correlation_graph_style = {"width": "49%", "display": "inline-block"}
             scatter_graph_style = {"width": "49%", "display": "inline-block"}
+            message_prompt = ""  # Default to no message
 
         # Check if a matrix cell was clicked
         if clickData is not None:
@@ -170,6 +193,7 @@ def register_callbacks(app, variants_data):
             correlation_fig, scatter_fig = tab_manager.calculate_correlation(
                 variant=variant,
                 correlation_method=correlation_method,
+                categorical_column=categorical_column,
                 x_column=x_column,
                 y_column=y_column,
             )
@@ -183,4 +207,5 @@ def register_callbacks(app, variants_data):
             scatter_fig,
             correlation_graph_style,
             scatter_graph_style,
+            message_prompt
         )

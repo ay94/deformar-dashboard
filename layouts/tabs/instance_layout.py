@@ -1,8 +1,9 @@
-# from . import dash_table, dcc, go, html
+from layouts.managers.instance_layout_managers import InstanceTabLayout
 
 
-def get_layout():
-    pass
+def get_layout(config_manager):
+    tab_layout = InstanceTabLayout(config_manager)
+    return tab_layout.render()
 
 
 #     return dcc.Tab(

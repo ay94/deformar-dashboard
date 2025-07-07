@@ -27,11 +27,11 @@ def process_json_data(jsonData):
     return df
 
 
-def process_selection(decisionSelection):
+def process_selection(selection):
     selection_ids = []
-    if decisionSelection:
-        if isinstance(decisionSelection, str) and decisionSelection.strip():
-            decision_selection = process_json_data(decisionSelection)
+    if selection:
+        if isinstance(selection, str) and selection.strip():
+            decision_selection = process_json_data(selection)
             if not decision_selection.empty:
                 selection_ids = decision_selection["Global Id"].tolist()
         else:
@@ -42,6 +42,18 @@ def process_selection(decisionSelection):
 def generate_dropdown_options(columns):
     # This could pull column names from a dataset configuration or similar
     return [{"label": col, "value": col} for col in columns]
+
+def generate_variant_dropdown_options(columns):
+    variant_to_label = {
+        "ANERCorp_CamelLab_arabertv02": "Arabic",
+        "conll2003_bert": "English"
+        # Add more mappings here if needed
+    }
+    
+    return [
+        {"label": variant_to_label.get(col, col), "value": col}
+        for col in columns
+    ]
 
 
 def generate_status_table(variants_data):
@@ -94,6 +106,105 @@ def generate_status_table(variants_data):
     )
 
 
+def generic_table(df, page_size=10):
+    """
+    Returns a styled Dash DataTable from a pandas DataFrame.
+    
+    Parameters:
+    - df: pd.DataFrame
+    - page_size: int (default: 10)
+
+    Returns:
+    - dash_table.DataTable
+    """
+    return dash_table.DataTable(
+        data=df.to_dict("records"),
+        columns=[{"name": col, "id": col} for col in df.columns],
+        style_table={
+            "overflowX": "auto",
+            "border": "1px solid #ddd",
+        },
+        style_header={
+            "backgroundColor": "#f8f9fa",
+            "fontWeight": "bold",
+            "border": "1px solid #ccc",
+        },
+        style_cell={
+            "textAlign": "left",
+            "padding": "8px",
+            "border": "1px solid #eee",
+            "fontFamily": "Arial, sans-serif",
+            "fontSize": "14px",
+        },
+        style_data_conditional=[
+            {
+                "if": {"row_index": "odd"},
+                "backgroundColor": "#f9f9f9",
+            }
+        ],
+        page_size=page_size,
+        sort_action="native",
+        filter_action="native",
+    )
+
+def render_basic_table(df, page_size=10):
+    """
+    Render a basic Dash DataTable with a custom header color.
+    """
+    return dash_table.DataTable(
+        data=df.to_dict("records"),
+        columns=[{"name": col, "id": col} for col in df.columns],
+        style_header={
+            "backgroundColor": "#4bb3a8",  # teal-greenish color
+            "fontWeight": "bold",
+            "color": "white",
+        },
+        style_table={"overflowX": "auto"},
+        style_cell={
+            "textAlign": "left",
+            "fontFamily": "Arial, sans-serif",
+            "fontSize": "14px",
+        },
+        page_size=page_size,
+        sort_action="native",
+        filter_action="native",
+    )
+
+
+def render_basic_table_with_font(df, page_size=10):
+    """
+    Render a clean, centered Dash DataTable with a custom header color and larger font.
+    """
+    return dash_table.DataTable(
+        data=df.to_dict("records"),
+        columns=[{"name": col, "id": col} for col in df.columns],
+        style_header={
+            "backgroundColor": "#4bb3a8",  # teal-greenish header
+            "fontWeight": "bold",
+            "color": "white",
+            "fontSize": "20px",
+            "textAlign": "center",
+        },
+        style_cell={
+            "textAlign": "center",  # Center all cell text
+            "fontSize": "16px",
+            "fontFamily": "Arial, sans-serif",
+            "padding": "8px",
+        },
+        # Explicitly center-align columns too
+        style_cell_conditional=[
+            {
+                "if": {"column_id": col},
+                "textAlign": "center",
+            } for col in df.columns
+        ],
+        style_table={"overflowX": "auto"},
+        page_size=page_size,
+        sort_action="native",
+        filter_action="native",
+    )
+
+
 class CustomButton:
     def __init__(self, label, button_id, class_name="button-common", **kwargs):
         self.label = label
@@ -105,6 +216,7 @@ class CustomButton:
         return html.Button(
             self.label, id=self.id, className=self.class_name, **self.kwargs
         )
+
 
 
 # class CustomDataTable:
@@ -145,7 +257,7 @@ class CustomDataTable:
         data=None,
         columns=None,
         style_header=None,
-        page_size=10,
+        page_size=15,
         **kwargs,
     ):
         if table_id is None:
@@ -218,7 +330,71 @@ class DropdownContainer:
                 )
             ],
         )
+        
+class FilterLayerSection:
+    def __init__(self, header_text, content_components):
+        self.header_text = header_text
+        self.content_components = content_components
 
+    def render(self):
+        return html.Div(
+            className="filter-layer-section",
+            style={
+                "display": "flex",
+                "flexDirection": "column",
+                "alignItems": "center",
+                "justifyContent": "center",
+                "margin": "30px 0",
+            },
+            children=[
+                html.H2(
+                    self.header_text,
+                    className="section-header",
+                    style={"textAlign": "center"},
+                ),
+                html.Div(
+                    children=self.content_components,
+                    style={
+                        "display": "flex",
+                        "justifyContent": "center",
+                        "alignItems": "center",
+                        "gap": "10px",
+                        "flexWrap": "wrap",
+                        "marginTop": "15px",
+                    },
+                ),
+            ],
+        )
+
+
+
+def create_filter_datatable(table_id, columns=[], data=[]):
+    return dash_table.DataTable(
+        id=table_id,
+        columns=columns,
+        data=data,
+        page_size=10,
+        style_table={
+            "overflowX": "auto",
+            "border": "1px solid #ccc",
+        },
+        style_header={
+            "backgroundColor": "#4bb3a8",
+            "color": "white",
+            "fontWeight": "bold",
+            "textAlign": "center",
+            "border": "1px solid #ccc",
+        },
+        style_cell={
+            "textAlign": "center",
+            "padding": "8px",
+            "fontSize": "14px",
+            "whiteSpace": "normal",
+            "border": "1px solid #ccc",
+        },
+        filter_action="native",
+        sort_action="native",
+    )
 
 class SectionContainer:
     def __init__(self, header_text, content_components):
@@ -349,7 +525,7 @@ class VariantSection:
         self.variants_dropdown = dcc.Dropdown(
             id="variant_selector",
             placeholder="Select variant...",
-            options=generate_dropdown_options(variants),
+            options=generate_variant_dropdown_options(variants),
             value=variants[0],
             style={"width": "50%", "margin": "auto"},
         )

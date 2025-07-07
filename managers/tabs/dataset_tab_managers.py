@@ -1,12 +1,13 @@
 import logging
-
+import json
+import pandas as pd
 from config.enums import (CorrelationCoefficients, CustomAnalysisType,
                           ResultsType)
 from layouts.managers.layout_managers import CustomDataTable
 from managers.plotting.dataset_plotting_managers import (
     CorrelationAnalysis, DistributionAnalysis, ErrorRateAnalysis,
     SentenceLengthPlot, TagAmbiguityAnalysis, TokenLengthPlot,
-    TokenVariabilityAnalysis)
+    VariabilityAnalysis)
 from managers.tabs.tab_managers import BaseTabManager
 
 
@@ -14,6 +15,12 @@ class DatasetTabManager(BaseTabManager):
     def __init__(self, variants_data):
         super().__init__(variants_data)
 
+    def load_corpora(self, corpus_name='ANERCorp_CamelLab'):
+        with open('/Users/ay227/Library/CloudStorage/GoogleDrive-ahmed.younes.sam@gmail.com/My Drive/Final Year Experiments/Thesis-Experiments/Experiments/ExperimentData/corpora.json', 'r') as file:
+            corpora = json.load(file)
+        df = pd.DataFrame([{'Word':w, 'Tag':t} for data in corpora[corpus_name]['splits']['test'] for w, t in zip(data['words'], data['tags'])])
+        return df
+    
     def generate_statistics(self, data, columns):
         """Generate statistical summaries for given columns."""
         if not columns:
@@ -84,6 +91,12 @@ class DatasetTabManager(BaseTabManager):
             data = tab_data.results
         elif results_type_enum == ResultsType.CLUSTERING:
             data = tab_data.kmeans_results
+        elif results_type_enum == ResultsType.TOKEN:
+            data = tab_data.token_report
+        elif results_type_enum == ResultsType.ENTITY:
+            data = tab_data.entity_non_strict_report
+        elif results_type_enum == ResultsType.STRICT_ENTITY:
+            data = tab_data.entity_strict_report
         else:
             logging.error("Unknown results type.")
             return None
@@ -102,6 +115,7 @@ class DatasetTabManager(BaseTabManager):
         self,
         variant,
         correlation_method,
+        categorical_column,
         x_column="Inconsistency Count",
         y_column="Inconsistency Count",
     ):
@@ -136,16 +150,25 @@ class DatasetTabManager(BaseTabManager):
         correlation_analysis = CorrelationAnalysis()
 
         return correlation_analysis.calculate_correlation(
-            selected_df, coefficient, x_column, y_column
+            selected_df, coefficient, categorical_column, x_column, y_column
         )
 
     def create_token_variability_table(self, selected_df):
         """
         Calls the TokenDistributionAnalysis class to create a variability table.
         """
-        token_variability_analysis = TokenVariabilityAnalysis()
-
-        return token_variability_analysis.create_token_variability_table(selected_df)
+        variability_analysis = VariabilityAnalysis()
+        token_variability = variability_analysis.create_token_variability_table(selected_df)
+        return token_variability
+    
+    def create_word_variability_table(self, corpus_name):
+        """
+        Calls the TokenDistributionAnalysis class to create a variability table.
+        """
+        variability_analysis = VariabilityAnalysis()
+        corpus = self.load_corpora(corpus_name)
+        word_variability = variability_analysis.create_word_variability_table(corpus)        
+        return word_variability
 
     def create_tag_ambiguity_table(self, selected_df):
         """
@@ -180,7 +203,7 @@ class DatasetTabManager(BaseTabManager):
         )
         return figure
 
-    def perform_custom_analysis(self, custom_distribution_type, variant):
+    def perform_custom_analysis(self, custom_distribution_type, variant, corpus_name):
 
         try:
             analysis_type_enum = CustomAnalysisType(custom_distribution_type)
@@ -199,8 +222,9 @@ class DatasetTabManager(BaseTabManager):
             return None
 
         if analysis_type_enum == CustomAnalysisType.TOKEN:
-
             analysis = self.create_token_variability_table(selected_df)
+        elif analysis_type_enum == CustomAnalysisType.WORD:
+            analysis = self.create_word_variability_table(corpus_name)
         elif analysis_type_enum == CustomAnalysisType.TAG:
             analysis = self.create_tag_ambiguity_table(selected_df)
         elif analysis_type_enum == CustomAnalysisType.TOKEN_LENGTH:

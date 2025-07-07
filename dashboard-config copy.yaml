@@ -1,0 +1,290 @@
+development:
+  debug: True
+  port: 8056
+dashboard:
+  tabs:
+    - tab_value: load
+      tab_label: Data Loading
+    - tab_value: dataset
+      tab_label: Data Overview
+    - tab_value: decision
+      tab_label: Decision Boundary
+    - tab_value: performance
+      tab_label: Performance Metrics
+    - tab_value: instance
+      tab_label: Instance Evaluation
+  variants:
+    - ANERCorp_CamelLab_arabertv02
+    - conll2003_bert
+  data_dir: Final Year Experiments/Thesis-Experiments/Experiments/BaseLineExperiment
+  dashboard_data:
+    data:
+      analysis_data:
+        folder: extractions/analysis
+        format: json
+        column_mappings:
+          sentence_ids: "Sentence Ids"
+          token_positions: "Token Positions"
+          words: "Words"
+          tokens: "Tokens"
+          word_pieces: "Word Pieces"
+          core_tokens: "Core Tokens"
+          token_selector_id: "Token Selector Id"
+          true_labels: "True Labels"
+          pred_labels: "Pred Labels"
+          agreements: "Agreements"
+          x: "X"
+          y: "Y"
+          labels: "Labels"
+          losses: "Losses"
+          token_ids: "Token Ids"
+          global_id: "Global Id"
+          true_token_score: "True Silhouette"
+          pred_token_score: "Pred Silhouette"
+          k=3: "K=3"
+          boundary_clusters: "Boundary Clusters"
+          k=4: "K=4"
+          entity_clusters: "Entity Clusters"
+          k=9: "K=9"
+          token_clusters: "Token Clusters"
+          consistency_count: "Consistency Count"
+          inconsistency_count: "Inconsistency Count"
+          total_train_occurrences: "Total Train Occurrences"
+          local_token_entropy: "Local Token Entropy"
+          token_max_entropy: "Token Max Entropy"
+          dataset_token_entropy: "Dataset Token Entropy"
+          local_word_entropy: "Local Word Entropy"
+          word_max_entropy: "Word Max Entropy"
+          dataset_word_entropy: "Dataset Word Entropy"
+          tokenization_rate: "Tokenization Rate"
+          tr_entity: "TR Entity"
+          pr_entity: "PR Entity"
+          error_type: "Error Type"
+          O: "O Confidence"
+          B-PER: "B-PER Confidence"
+          B-PERS: "B-PER Confidence"
+          I-PER: "I-PER Confidence"
+          I-PERS: "I-PER Confidence"
+          B-ORG: "B-ORG Confidence"
+          I-ORG: "I-ORG Confidence"
+          B-LOC: "B-LOC Confidence"
+          I-LOC: "I-LOC Confidence"
+          B-MISC: "B-MISC Confidence"
+          I-MISC: "I-MISC Confidence"
+          prediction_entropy: "Prediction Entropy"
+          prediction_max_entropy: "Prediction Max Entropy"
+          confidence: "Token Confidence"
+          variability: "Variability"
+          pre_x: "Pre X"
+          pre_y: "Pre Y"
+          true_entities: "True Entities"
+          strict_true_entities: "Strict True Entities"
+          true_aligned_scheme: "True Aligned Scheme"
+          pred_entities: "Pred Entities"
+          strict_pred_entities: "Strict Pred Entities"
+          pred_aligned_scheme: "Pred Aligned Scheme"
+      train_data:
+        folder: extractions/analysis
+        format: json
+        column_mappings: 
+          sentence_ids: "Sentence Ids"
+          token_positions: "Token Positions"
+          x: "X"
+          y: "Y"
+          labels: "Labels"
+          losses: "Losses"
+          token_ids: "Token Ids"
+          global_id: "Global Id"
+          words: "Words"
+          tokens: "Tokens"
+          word_pieces: "Word Pieces"
+          core_tokens: "Core Tokens"
+          token_selector_id: "Token Selector Id"
+          true_labels: "True Labels"
+          true_entities: "True Entities"
+          strict_true_entities: "Strict True Entities"
+          true_aligned_scheme: "True Aligned Scheme"
+      kmeans_results:
+        folder: extractions/results
+        format: json
+        column_mappings:
+          n_clusters: "K"
+          homogeneity: "Homogeneity"
+          completeness: "Completeness"
+          v_measure: "V Measure"
+      results:
+        folder: extractions/results
+        format: json
+        column_mappings: null
+      token_report:
+        folder: extractions/results
+        format: json
+        column_mappings: null
+      token_confusion_matrix:
+        folder: extractions/results
+        format: json
+        type: dict
+        column_mappings: null
+      token_misclassifications:
+        folder: extractions/results
+        format: json
+        type: index
+        column_mappings: null
+      entity_non_strict_report:
+        folder: extractions/results
+        format: json
+        column_mappings: null
+      entity_strict_report:
+        folder: extractions/results
+        format: json
+        column_mappings: null
+      entity_non_strict_confusion_data:
+        folder: extractions/results
+        format: json
+        type: dict
+        column_mappings: null
+      non_strict_entity_misclassifications:
+        folder: extractions/results
+        format: json
+        type: index
+        column_mappings: null
+      entity_strict_confusion_data:
+        folder: extractions/results
+        format: json
+        type: dict
+        column_mappings: null
+      strict_entity_misclassifications:
+        folder: extractions/results
+        format: json
+        type: index
+        column_mappings: null
+      centroids_avg_similarity_matrix:
+        folder: extractions/matrices
+        format: json
+        column_mappings: null
+      attention_weights_similarity_matrix:
+        folder: extractions/matrices
+        format: npy
+      attention_weights_similarity_heatmap:
+        folder: extractions/matrices
+        format: json
+      attention_similarity_matrix:
+        folder: extractions/matrices
+        format: npy
+      attention_similarity_heatmap:
+        folder: extractions/matrices
+        format: json
+    model:
+      fine_tuned_model:
+        model_path:
+      pre_trained_model:
+        model_path:
+  dataset_tab:
+    statistics_columns:
+      - "Losses"
+      - "True Silhouette Score"
+      - "Pred Silhouette Score"
+      - "Consistency Count"
+      - "Consistency Ratio"
+      - "Inconsistency Count"
+      - "Inconsistency Ratio"
+      - "Local Token Entropy"
+      - "Normalized Token Entropy"
+      - "Dataset Token Entropy"
+      - "Local Word Entropy"
+      - "Normalized Word Entropy"
+      - "Dataset Word Entropy"
+      - "Tokenization Rate"
+      - "O Confidence"
+      - "B-PER Confidence"
+      - "I-PER Confidence"
+      - "B-ORG Confidence"
+      - "I-ORG Confidence"
+      - "B-LOC Confidence"
+      - "I-LOC Confidence"
+      - "B-MISC Confidence"
+      - "I-MISC Confidence"
+      - "Token Confidence"
+      - "Prediction Entropy"
+      - "Normalized Prediction Entropy"
+      - "Variability"
+    categorical_columns:
+      - "True Labels"
+      - "Pred Labels"
+      - "Agreements"
+      - "Error Type"
+      - "True Entities"
+      - "Strict True Entities"
+      - "True Aligned Scheme"
+      - "Pred Entities"
+      - "Strict Pred Entities"
+      - "Pred Aligned Scheme"
+    results:
+      - Training Results
+      - Clustering Results
+      - Token-Level Report
+      - Entity-Level Report
+      - Entity-Level Strict Report
+    custom_analysis:
+      - Token Variability
+      - Word Variability
+      - Tag Ambiguity 
+      - Token Length Distribution
+      - Sentence Length Distribution 
+      - Tokenization Error Rate Analysis
+    coefficients:
+      - Pearson
+      - Spearman
+    correlation_columns:
+      - "Losses"
+      - "True Silhouette Score"
+      - "Pred Silhouette Score"
+      - "Consistency Count"
+      - "Consistency Ratio"
+      - "Inconsistency Count"
+      - "Inconsistency Ratio"
+      - "Local Token Entropy"
+      - "Normalized Token Entropy"
+      - "Dataset Token Entropy"
+      - "Local Word Entropy"
+      - "Normalized Word Entropy"
+      - "Dataset Word Entropy"
+      - "Tokenization Rate"
+      - "Prediction Entropy"
+      - "Normalized Prediction Entropy"
+      - "Token Confidence"
+      - "Variability"
+      - "O Confidence"
+      - "B-PER Confidence"
+      - "I-PER Confidence"
+      - "B-ORG Confidence"
+      - "I-ORG Confidence"
+      - "B-LOC Confidence"
+      - "I-LOC Confidence"
+      - "B-MISC Confidence"
+      - "I-MISC Confidence"
+  decision_tab:
+    decision_type:
+      - Pre-trained Model
+      - Fine Tuned Model
+    decision_columns:
+      - "True Labels"
+      - "Pred Labels"
+      - "Error Type"
+      - "True Entities"
+      - "Strict True Entities"
+      - "True Aligned Scheme"
+      - "Pred Entities"
+      - "Strict Pred Entities"
+      - "Pred Aligned Scheme"
+      - "Agreements"
+      - "K=3"
+      - "K=4"
+      - "K=9"
+      - "Boundary Clusters"
+      - "Entity Clusters"
+      - "Token Clusters"
+    coefficients:
+      - Pearson
+      - Spearman
+        

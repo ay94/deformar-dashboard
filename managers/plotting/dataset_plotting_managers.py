@@ -127,12 +127,30 @@ class DistributionAnalysis(BaseAnalysis):
         return None
 
 
-class TokenVariabilityAnalysis(BaseAnalysis):
+class VariabilityAnalysis(BaseAnalysis):
     @BaseAnalysis.handle_errors
     def calculate_token_counts_and_ratios(self, df, columns):
         counts = df[columns.TRUE_LABELS.value].value_counts().sort_index()
         types = df.groupby(columns.TRUE_LABELS.value)[
             columns.CORE_TOKENS.value
+        ].nunique()
+        ratios = types / counts
+
+        token_distribution_df = pd.DataFrame(
+            {
+                columns.RAW_COUNTS.value: counts,
+                columns.TYPES.value: types,
+                columns.COUNT_TYPE_RATIO.value: ratios,
+            }
+        )
+
+        return token_distribution_df
+    
+    @BaseAnalysis.handle_errors
+    def calculate_word_counts_and_ratios(self, df, columns):
+        counts = df['Tag'].value_counts().sort_index()
+        types = df.groupby('Tag')[
+            'Word'
         ].nunique()
         ratios = types / counts
 
@@ -189,6 +207,50 @@ class TokenVariabilityAnalysis(BaseAnalysis):
         ].apply(lambda x: round(x * 100, 2))
 
         return token_distribution_df
+    
+    @BaseAnalysis.handle_errors
+    def calculate_word_totals_and_ratios(self, df, token_distribution_df, columns):
+        totals = df['Word'].agg(["size", "nunique"]).tolist()
+        ne_totals = (
+            df[df['Tag'] != "O"]['Word']
+            .agg(["size", "nunique"])
+            .tolist()
+        )
+
+        token_distribution_df.loc["Total"] = totals + [totals[1] / totals[0]]
+        token_distribution_df.loc["Total NEs"] = ne_totals + [
+            ne_totals[1] / ne_totals[0]
+        ]
+
+        token_distribution_df = token_distribution_df.rename(
+            columns=columns.rename_mapping()
+        )
+
+        token_distribution_df[columns.NUMBER_OF_TOKENS.value] = token_distribution_df[
+            columns.NUMBER_OF_TOKENS.value
+        ].astype(int)
+        token_distribution_df[columns.NUMBER_OF_TYPES.value] = token_distribution_df[
+            columns.NUMBER_OF_TYPES.value
+        ].astype(int)
+        token_distribution_df[columns.TOKEN_TYPE_RATIO.value] = token_distribution_df[
+            columns.TOKEN_TYPE_RATIO.value
+        ].apply(lambda x: round(x, 3))
+
+        token_distribution_df = token_distribution_df.sort_values(
+            by=columns.NUMBER_OF_TOKENS.value, ascending=False
+        )
+        token_distribution_df = token_distribution_df.reset_index().rename(
+            columns={'Tag': columns.CATEGORY.value}
+        )
+
+        token_distribution_df[columns.NEs_PROPORTION.value] = (
+            token_distribution_df[columns.NUMBER_OF_TOKENS.value] / ne_totals[0]
+        )
+        token_distribution_df[columns.NEs_PROPORTION.value] = token_distribution_df[
+            columns.NEs_PROPORTION.value
+        ].apply(lambda x: round(x * 100, 2))
+
+        return token_distribution_df
 
     def create_token_variability_table(self, selected_df):
         columns = TokenVariabilityColumns
@@ -206,6 +268,24 @@ class TokenVariabilityAnalysis(BaseAnalysis):
             return None
 
         return self.render_table(token_distribution_df, "token_distribution_table")
+    
+    
+    def create_word_variability_table(self, selected_df):
+        columns = TokenVariabilityColumns
+
+        token_distribution_df = self.calculate_word_counts_and_ratios(
+            selected_df, columns
+        )
+        if token_distribution_df is None:
+            return None
+
+        token_distribution_df = self.calculate_word_totals_and_ratios(
+            selected_df, token_distribution_df, columns
+        )
+        if token_distribution_df is None:
+            return None
+
+        return self.render_table(token_distribution_df, "word_distribution_table")
 
 
 class TagAmbiguityAnalysis(BaseAnalysis):
@@ -375,35 +455,37 @@ class ErrorRateAnalysis(BaseAnalysis):
 class CorrelationAnalysis(BaseAnalysis):
     @BaseAnalysis.handle_errors
     def calculate_correlation(
-        self, selected_df, correlation_method, x_column, y_column
+        self, selected_df, correlation_method, categorical_column, x_column, y_column
     ):
         """
         Calculate and return correlation matrix and scatter plot for selected data.
         """
-        columns = CorrelationColumns
-        true_labels_col = CorrelationColumns.TRUE_LABELS.value
+        columns = CorrelationColumns()
+        correlation_columns = columns.get_columns(include_confidence=False)
+        # true_labels_col = columns.true_labels[0]
 
         try:
             # Aggregate the DataFrame by true_labels and compute mean of each column
+            if not categorical_column:
+                categorical_column = 'True Labels'
+
             aggregated_df = (
-                selected_df.groupby(true_labels_col)[columns.list_columns()[1:]]
+                selected_df.groupby(categorical_column)[correlation_columns]
                 .agg("mean")
                 .reset_index()
             )
             numeric_cols = aggregated_df.select_dtypes(
                 include=[np.number]
             ).columns.tolist()
-
             # Compute the correlation matrix
-
             correlation_matrix = aggregated_df[numeric_cols].corr(
                 method=correlation_method
             )
             # Create a mask for the upper triangle
-            mask = np.triu(np.ones_like(correlation_matrix, dtype=bool))
+            # mask = np.triu(np.ones_like(correlation_matrix, dtype=bool))
 
-            # Set the values in the upper triangle to NaN
-            correlation_matrix = correlation_matrix.mask(mask)
+            # # Set the values in the upper triangle to NaN
+            # correlation_matrix = correlation_matrix.mask(mask)
             config = MatrixConfig(
                 title=f"{correlation_method.capitalize()} Correlation Matrix of Aggregated Data",
                 x="Variables",
@@ -419,11 +501,11 @@ class CorrelationAnalysis(BaseAnalysis):
             matrix_fig = create_correlation_matrix_plot(correlation_matrix, config)
             color_map = ColorMap()
             scatter_config = ScatterWidthConfig(
-                title=f"Scatter Plot of {x_column} vs {y_column} by Label",
+                title=f"Correlation Scatter Plot of {x_column} vs {y_column}",
                 xaxis_title=x_column,
                 yaxis_title=y_column,
                 line_color="#3DAFA8",
-                marker_color=true_labels_col,
+                marker_color=categorical_column,
                 width=700,
                 height=700,
                 color_discrete_map=color_map.color_map,

@@ -1,13 +1,32 @@
 import logging
 from dataclasses import dataclass, field
 from typing import Any, Dict
-
+import re
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from experiment_utils.utils import FileHandler
 from flask_caching import Cache
 from tqdm.autonotebook import tqdm
+import torch
+from torch.nn import Module
+from typing import Optional
+from transformers import PreTrainedModel
+from transformers import AutoModelForTokenClassification
+from experiment_utils.train import DatasetManager
+from experiment_utils.config_managers import ExtractionConfigManager
+
+
+
+MODEL_MAP = {
+    "ANERCorp_CamelLab_arabertv02": "aubmindlab/bert-base-arabertv02",
+    "conll2003_bert": "bert-base-cased",
+}
+
+DATA_MAP = {
+    "ANERCorp_CamelLab_arabertv02": "ANERCorp_CamelLab",
+    "conll2003_bert": "conll2003",
+}
 
 
 @dataclass
@@ -16,9 +35,15 @@ class DashboardData:
     train_data: pd.DataFrame = field(default_factory=pd.DataFrame)
     kmeans_results: pd.DataFrame = field(default_factory=pd.DataFrame)
     results: pd.DataFrame = field(default_factory=pd.DataFrame)
-    entity_report: pd.DataFrame = field(default_factory=pd.DataFrame)
+    entity_non_strict_report: pd.DataFrame = field(default_factory=pd.DataFrame)
+    entity_strict_report: pd.DataFrame = field(default_factory=pd.DataFrame)
     token_report: pd.DataFrame = field(default_factory=pd.DataFrame)
-    entity_confusion_data: pd.DataFrame = field(default_factory=pd.DataFrame)
+    token_confusion_matrix: pd.DataFrame = field(default_factory=pd.DataFrame)
+    token_misclassifications: pd.DataFrame = field(default_factory=pd.DataFrame)
+    entity_non_strict_confusion_data: pd.DataFrame = field(default_factory=pd.DataFrame)
+    non_strict_entity_misclassifications: pd.DataFrame = field(default_factory=pd.DataFrame)
+    entity_strict_confusion_data: pd.DataFrame = field(default_factory=pd.DataFrame)
+    strict_entity_misclassifications: pd.DataFrame = field(default_factory=pd.DataFrame)
     centroids_avg_similarity_matrix: pd.DataFrame = field(default_factory=pd.DataFrame)
     attention_weights_similarity_heatmap: go.Figure = field(default_factory=go.Figure)
     attention_weights_similarity_matrix: np.ndarray = field(
@@ -28,6 +53,18 @@ class DashboardData:
     attention_similarity_matrix: np.ndarray = field(
         default_factory=lambda: np.array([])
     )
+    pretrained_model: Optional[Module] = None
+    pretrained_model_name: Optional[str] = None
+    fine_tuned_model: Optional[Module] = None
+    fine_tuned_model_path: Optional[str] = None
+    variant: Optional[str] = None
+    extraction_config_dir: Optional[str] = None
+    corpora_dir: Optional[str] = None
+    dataset_manager: Optional[DatasetManager] = None
+    train_dataset: Optional[Any] = None
+    test_dataset: Optional[Any] = None
+  
+
 
     def __post_init__(self):
         # Round float columns to four decimal places
@@ -38,8 +75,28 @@ class DashboardData:
         # Convert list to string in the 'Word Pieces' column of analysis_data if it exists
         if "Word Pieces" in self.analysis_data.columns:
             self.analysis_data["Word Pieces"] = self.analysis_data["Word Pieces"].apply(
-                lambda x: ", ".join(x) if isinstance(x, list) else x
+                lambda x: ", ".join(x) if isinstance(x, list) else ("" if pd.isna(x) else x)
             )
+        
+        # Normalize PER Entity Tag
+        tag_mapping = {
+            'B-PERS': 'B-PER',
+            'I-PERS': 'I-PER'
+        }
+        
+        if "True Labels" in self.analysis_data.columns:
+            self.analysis_data["True Labels"] = self.analysis_data["True Labels"].replace(tag_mapping)
+            self.train_data["True Labels"] = self.train_data["True Labels"].replace(tag_mapping)
+        if "Pred Labels" in self.analysis_data.columns:
+            self.analysis_data["Pred Labels"] = self.analysis_data["Pred Labels"].replace(tag_mapping)
+        if "Vocabulary Status" in self.analysis_data.columns:
+            self.analysis_data["Vocabulary Status"] = np.where(
+                self.analysis_data["Vocabulary Status"] == -1, "OOV", "IV"
+            )
+                        
+        if "Error Types" in self.analysis_data.columns:
+            self.analysis_data.loc[self.analysis_data["Labels"] == -100, "Error Type"] = "IGNORED"
+
 
         self.analysis_data["Consistency Ratio"] = np.where(
             self.analysis_data["Total Train Occurrences"]
@@ -57,21 +114,25 @@ class DashboardData:
             / self.analysis_data["Total Train Occurrences"],
             0,
         )
+        self.analysis_data["Confusion Components"] = DashboardData.classify_ner(
+            self.analysis_data, "True Labels", "Pred Labels"
+        )
         self.analysis_data[
-            "Normalized Token Entropy"
+            "Token Ambiguity"
         ] = DashboardData.normalized_entropy(
             self.analysis_data, "Local Token Entropy", "Token Max Entropy"
         )  # filling 0/0 division as it generates Nan
         self.analysis_data[
-            "Normalized Word Entropy"
+            "Word Ambiguity"
         ] = DashboardData.normalized_entropy(
-            self.analysis_data, "Local Token Entropy", "Token Max Entropy"
+            self.analysis_data, "Local Word Entropy", "Word Max Entropy"
         )  # filling 0/0 division as it generates Nan
         self.analysis_data[
-            "Normalized Prediction Entropy"
+            "Prediction Uncertainty"
         ] = DashboardData.normalized_entropy(
             self.analysis_data, "Prediction Entropy", "Prediction Max Entropy"
         )  # filling 0/0 division as it generates Nan
+
 
     def is_loaded(self, attribute):
         """Checks if the given attribute is loaded based on its type."""
@@ -82,6 +143,8 @@ class DashboardData:
             return len(attr_value.data) > 0
         elif isinstance(attr_value, np.ndarray):
             return attr_value.size > 0
+        elif isinstance(attr_value, dict):
+            return bool(attr_value)  # Returns True if the dictionary is non-empty
         return False  # Default case if the attribute type is unrecognized
 
     @staticmethod
@@ -105,38 +168,102 @@ class DashboardData:
         zero_div_mask = (df[max_entropy] == 0) & (df[raw_entropy] != 0)
         result[zero_div_mask] = 0
         return result
+    
+    @staticmethod   
+    def classify_ner(df, true_label_col, pred_label_col):
+        conditions = [
+            (df[pred_label_col] == df[true_label_col]) & (df[pred_label_col] != "O"),
+            (df[pred_label_col] != df[true_label_col]) & (df[pred_label_col] != "O"),
+            (df[pred_label_col] != df[true_label_col]) & (df[true_label_col] != "O") & (df[pred_label_col] == "O"),
+        ]
+        choices = ["TP", "FP", "FN"]
+        return np.select(conditions, choices, default="TN")  # Return only the classification column
+    @property
+    def get_fine_tuned_model(self):
+        if self.fine_tuned_model is None:
+            self.fine_tuned_model = torch.load(self.fine_tuned_model_path, map_location="cpu")
+            self.fine_tuned_model.eval()
+            self.fine_tuned_model.enable_attentions()
+        return self.fine_tuned_model
+    
+    @property
+    def get_pretrained_model(self):
+        if self.pretrained_model is None:
+            self.pretrained_model = AutoModelForTokenClassification.from_pretrained(
+                self.pretrained_model_name,
+                output_attentions=True
+            )
+        return self.pretrained_model
 
+    @property
+    def get_dataset_manager(self):
+        extraction_config = ExtractionConfigManager(self.extraction_config_dir)
 
+        tokenization_config = extraction_config.tokenization_config
+        self.dataset_manager = DatasetManager(
+                self.corpora_dir,
+                DATA_MAP[self.variant],
+                tokenization_config,
+                False
+            )
+        return self.dataset_manager
+    
+    @property
+    def get_train_dataset(self):
+        if self.dataset_manager is None:
+            self.dataset_manager = self.get_dataset_manager
+        if self.train_dataset is None:
+            self.train_dataset = self.dataset_manager.get_dataset("train")
+        return self.train_dataset
+
+    @property
+    def get_test_dataset(self):
+        if self.dataset_manager is None:
+            self.dataset_manager = self.get_dataset_manager
+        if self.test_dataset is None:
+            self.test_dataset = self.dataset_manager.get_dataset("test")
+        return self.test_dataset
+
+    
 class DataLoader:
     def __init__(self, config_manager, variant_name):
-        self.data_config = config_manager.data_config
+        self.config_manager = config_manager
+        self.variant = variant_name
         self.data_dir = config_manager.data_dir / variant_name
         self.dashboard_data = {}
 
     def load(self, file_name, file_config):
         file_handler = FileHandler(self.data_dir / file_config["folder"])
-        file_type = file_config["format"]
-        file_path = file_handler.file_path / f"{file_name}.{file_type}"
+        file_type = file_config.get("type", None)
+        file_format = file_config["format"]
+        file_path = file_handler.file_path / f"{file_name}.{file_format}"
 
         try:
             if file_path.exists():
-                # Load Plotly figures specifically
-                if file_type == "npy":
-                    return file_handler.load_numpy(file_path.with_suffix(".npy"))
+                match file_format:
+                    case "npy": 
+                        return file_handler.load_numpy(file_path.with_suffix(".npy"))
 
-                # Handle regular JSON data files
-                elif file_type == "json":
-                    data = file_handler.read_json(file_path)
-                    if (
-                        "column_mappings" in file_config
-                        and file_config["column_mappings"]
-                    ):
-                        data = self.apply_column_mappings(
-                            data, file_config["column_mappings"]
-                        )
-                    return data
-            else:
-                logging.warning("File does not exist: %s", file_path)
+                    # Handle regular JSON data files
+                    case "json":
+                        # Check if there's a specific type of JSON handling required
+                        if file_type and file_type =='dict':
+                            return file_handler.load_json(file_path)
+                        elif file_type and file_type =='index':
+                            return pd.read_json(file_path, orient='index')
+                        else:
+                            data = file_handler.read_json(file_path)
+                        if (
+                            "column_mappings" in file_config
+                            and file_config["column_mappings"]
+                        ):
+                            data = self.apply_column_mappings(
+                                data, file_config["column_mappings"]
+                            )
+                        return data
+                    case _:
+                        logging.warning("File does not exist: %s", file_path)
+                        
         except Exception as e:
             logging.error("Failed to load data from %s: %s", file_path, e)
             return None
@@ -146,13 +273,63 @@ class DataLoader:
     ) -> pd.DataFrame:
         """Rename columns in the DataFrame based on provided mappings."""
         return data.rename(columns=column_mappings)
+    
+    def load_model(self):
+        
+        model_name = MODEL_MAP.get(self.variant)
+
+        if not model_name:
+            raise ValueError(f"No pretrained model mapping found for variant: {self.variant}")
+
+        # Path to the .bin file
+        model_path = self.data_dir / "fine_tuning" / "model_binary.bin"
+
+        if not model_path.exists():
+            raise FileNotFoundError(f"Fine-tuned model not found at: {model_path}")
+
+        model = torch.load(model_path, map_location="cpu")
+
+        model.eval()
+
+        return model
+    
+    def load_data_manager(self):
+        extraction_config_dir = self.config_manager.data_dir / self.variant / 'configs/extraction_config.yaml'
+        
+        corpora_dir = self.config_manager.corpora_dir
+
+        extraction_config = ExtractionConfigManager(extraction_config_dir)
+
+        tokenization_config = extraction_config.tokenization_config
+        data_manager = DatasetManager(
+                corpora_dir,
+                DATA_MAP[self.variant],
+                tokenization_config,
+                False
+            )
+        return data_manager
 
     def load_all(self):
 
         logging.info("Loading Dashboard Data from  %s", self.data_dir)
-        for file_name, file_config in tqdm(self.data_config.items()):
+        for file_name, file_config in tqdm(self.config_manager.data_config.items()):
             self.dashboard_data[file_name] = self.load(file_name, file_config)
+        # logging.info('Loading Fine tuned Model')
+        # self.dashboard_data["fine_tuned_model"] = self.load_model()
+        self.dashboard_data["fine_tuned_model_path"] = self.data_dir / "fine_tuning" / "model_binary.bin"
+        # logging.info('Loading Pre Trained Model')
+        self.dashboard_data["pretrained_model_name"] = MODEL_MAP[self.variant]
+        self.dashboard_data["variant"] = self.variant
+        self.dashboard_data["extraction_config_dir"] =  self.config_manager.data_dir / self.variant / 'configs/extraction_config.yaml'
+        self.dashboard_data["corpora_dir"] = self.config_manager.corpora_dir
+        # self.dashboard_data["dataset_manager"] = self.load_data_manager()
 
+        # self.dashboard_data["pretrained_model"] = AutoModelForTokenClassification.from_pretrained(
+        #     MODEL_MAP[self.variant]
+        # )
+        # logging.info('Loading Data')
+        # self.dashboard_data["train_dataset"] = self.load_data('train')
+        # self.dashboard_data["test_dataset"] = self.load_data('test')
 
 class DataManager:
     def __init__(self, config_manager, server) -> None:
