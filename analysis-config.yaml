@@ -6,11 +6,11 @@ dashboard:
     - tab_value: load
       tab_label: Data Loading
     - tab_value: quantitative
-      tab_label: Quantitative Analysis
+      tab_label: Cross Component View
     - tab_value: qualitative
-      tab_label: Qualitative Analysis
+      tab_label: Behavioural Analysis View
     - tab_value: instance
-      tab_label: Instance Analysis
+      tab_label: Instance Level View
     # - tab_value: instance
     #   tab_label: Instance Evaluation
   variants:
@@ -113,52 +113,52 @@ dashboard:
           homogeneity: "Homogeneity"
           completeness: "Completeness"
           v_measure: "V Measure"
-      # results:
-      #   folder: extractions/results
-      #   format: json
-      #   column_mappings: null
-      # token_report:
-      #   folder: extractions/results
-      #   format: json
-      #   column_mappings: null
-      # token_confusion_matrix:
-      #   folder: extractions/results
-      #   format: json
-      #   type: dict
-      #   column_mappings: null
-      # token_misclassifications:
-      #   folder: extractions/results
-      #   format: json
-      #   type: index
-      #   column_mappings: null
-      # entity_non_strict_report:
-      #   folder: extractions/results
-      #   format: json
-      #   column_mappings: null
-      # entity_strict_report:
-      #   folder: extractions/results
-      #   format: json
-      #   column_mappings: null
-      # entity_non_strict_confusion_data:
-      #   folder: extractions/results
-      #   format: json
-      #   type: dict
-      #   column_mappings: null
-      # non_strict_entity_misclassifications:
-      #   folder: extractions/results
-      #   format: json
-      #   type: index
-      #   column_mappings: null
-      # entity_strict_confusion_data:
-      #   folder: extractions/results
-      #   format: json
-      #   type: dict
-      #   column_mappings: null
-      # strict_entity_misclassifications:
-        # folder: extractions/results
-        # format: json
-        # type: index
-        # column_mappings: null
+      results:
+        folder: extractions/results
+        format: json
+        column_mappings: null
+      token_report:
+        folder: extractions/results
+        format: json
+        column_mappings: null
+      token_confusion_matrix:
+        folder: extractions/results
+        format: json
+        type: dict
+        column_mappings: null
+      token_misclassifications:
+        folder: extractions/results
+        format: json
+        type: index
+        column_mappings: null
+      entity_non_strict_report:
+        folder: extractions/results
+        format: json
+        column_mappings: null
+      entity_strict_report:
+        folder: extractions/results
+        format: json
+        column_mappings: null
+      entity_non_strict_confusion_data:
+        folder: extractions/results
+        format: json
+        type: dict
+        column_mappings: null
+      non_strict_entity_misclassifications:
+        folder: extractions/results
+        format: json
+        type: index
+        column_mappings: null
+      entity_strict_confusion_data:
+        folder: extractions/results
+        format: json
+        type: dict
+        column_mappings: null
+      strict_entity_misclassifications:
+        folder: extractions/results
+        format: json
+        type: index
+        column_mappings: null
       centroids_avg_similarity_matrix:
         folder: extractions/matrices
         format: json
