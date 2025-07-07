@@ -26,16 +26,15 @@ This folder includes:
 
 ---
 
-### Step 2: Confirm `analysis-config.yaml` Paths
+### ⚙️ Step 2: Ensure the Config Path is Correct
 
-Check the contents of `reproducability/analysis-config.yaml`. It should include:
+In `main.py`, this line defines where the config file is loaded from:
 
-```yaml
-corpora_dir: "./reproducability"
-data_dir: "./reproducability/ExperimentData"
+```python
+CONFIG_PATH = (Path(__file__).parents[1] / "reproducability" / "analysis-config.yaml").resolve()
 ```
 
-You can adjust these paths if placing the folder elsewhere.
+> ✅ **If you move `analysis-config.yaml` somewhere else**, make sure to update this path in `main.py` accordingly.
 
 ---
 
