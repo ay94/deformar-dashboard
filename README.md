@@ -45,15 +45,6 @@ cd deformar-dashboard
 python main.py
 ```
 
-Ensure `main.py` contains this line (or modify accordingly):
-
-```python
-CONFIG_PATH = (Path(__file__).parents[1] / "reproducability" / "analysis-config.yaml").resolve()
-```
-
-If you move or rename the config file, update the path here to match.
-
-
 ## 📊 Dashboard Structure
 
 The `deformar-dashboard/` directory contains a modular Dash application. Key components include:
