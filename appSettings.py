@@ -1,10 +1,10 @@
 import dash_bootstrap_components as dbc
 from dash import Dash, Input, Output, dcc, html
 
-from callbacks import dataset_callback, decision_callback, load_callback, instance_callback
+from callbacks import cross_component_callback, decision_callback, load_callback, instance_callback
 from dataManager import DataManager
 from layouts.tabs import (
-                    dataset_layout,
+                    cross_component_layout,
                     decision_layout,
                     instance_layout,
                     load_layout
@@ -52,7 +52,7 @@ def start_app(config_manager):
     )
     tab_layouts = {
         "load": load_layout.get_layout(config_manager),
-        "quantitative": dataset_layout.get_layout(config_manager),
+        "quantitative": cross_component_layout.get_layout(config_manager),
         "qualitative": decision_layout.get_layout(config_manager),
         "instance": instance_layout.get_layout(config_manager),
     }
@@ -99,7 +99,7 @@ def start_app(config_manager):
         )  # Keep other tabs disabled if data is not loaded
 
     variants_data = load_callback.register_callbacks(app, data_manager)
-    dataset_callback.register_callbacks(app, variants_data)
+    cross_component_callback.register_callbacks(app, variants_data, config_manager)
     decision_callback.register_callbacks(app, variants_data)
     instance_callback.register_callbacks(app, variants_data)
     return app
