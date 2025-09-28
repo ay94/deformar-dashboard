@@ -55,6 +55,20 @@ def generate_variant_dropdown_options(columns):
         for col in columns
     ]
 
+def generate_language_options(columns):
+    variant_to_label = {
+        "ANERCorp_CamelLab_arabertv02": "Arabic",
+        "conll2003_bert": "English",
+        "combined": "Combined",
+        
+        # Add more mappings here if needed
+    }
+    
+    return [
+        {"label": variant_to_label.get(col, col), "value": col}
+        for col in columns
+    ]
+
 
 def generate_status_table(variants_data):
     """Generates a Dash DataTable showing the loading status for attributes across multiple variants."""
@@ -526,6 +540,24 @@ class VariantSection:
             id="variant_selector",
             placeholder="Select variant...",
             options=generate_variant_dropdown_options(variants),
+            value=variants[0],
+            style={"width": "50%", "margin": "auto"},
+        )
+        self.tab_data_div = html.Div(id="loaded_tab_data")
+
+    def render(self):
+
+        return DropdownContainer(
+            "Select Variant:", self.variants_dropdown, self.tab_data_div
+        ).render()
+
+
+class LanguageSelection:
+    def __init__(self, variants):
+        self.variants_dropdown = dcc.Dropdown(
+            id="language_selector",
+            placeholder="Select language...",
+            options=generate_language_options(variants),
             value=variants[0],
             style={"width": "50%", "margin": "auto"},
         )
