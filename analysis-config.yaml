@@ -177,100 +177,266 @@ dashboard:
         format: json
   cross_component_tab:
     components:
-    - id: "data"
-      label: "Data Component"
-      analyses:
-        - id: "structural"
-          label: "Structural Analysis"
+      - id: "data"
+        label: "Data Component"
+        analyses:
+          - id: "structural"
+            label: "Structural Analysis"
+            figures:
+              - id: "dataset_stats"
+                label: "Dataset Stats"
+                plot: "table"
+                required_columns: null
+              - id: "entity_tag_distribution"
+                label: "Entity Tag Distribution"
+                plot: "bar"
+                required_columns: null
+              - id: "entity_span_distribution"
+                label: "Entity Span Distribution"
+                plot: "bar"
+                required_columns: null
+              - id: "entity_span_complexity"              # NEW
+                label: "Entity Span Complexity"
+                plot: "box"
+                required_columns: null
+
+          - id: "lexical"
+            label: "Lexical Analysis"
+            figures:
+              - id: "entity_tag_type_distribution"
+                label: "Entity Tag Type Distribution"
+                plot: "bar"
+                required_columns: null
+              - id: "type_to_word_ratio"
+                label: "Type To Word Ratio (TWR)"
+                plot: "bar"
+                required_columns: null
+              - id: "word_type_frequency_distribution"
+                label: "Word Type Frequency Distribution"
+                plot: "bar"
+                required_columns: null
+              - id: "dataset_oov_rate"
+                label: "Dataset OOV Rate"
+                plot: "table"
+                required_columns: null
+              - id: "entity_tag_oov_rate"
+                label: "Entity Tag OOV Rate"
+                plot: "bar"
+                required_columns: null
+
+          - id: "tokenisation"
+            label: "Tokenisation Impact"
+            figures:
+              - id: "tokenised_dataset_stats"
+                label: "Tokenised Dataset Stats"
+                plot: "bar"
+                required_columns: null
+              - id: "entity_tag_token_type_distribution"
+                label: "Entity Tag Token Type Distribution"
+                plot: "bar"
+                required_columns: null
+              - id: "type_to_token_ratio"
+                label: "Type To Token Ratio (TTR)"
+                plot: "bar"
+                required_columns: null
+              - id: "token_type_frequency_distribution"
+                label: "Token Type Frequency Distribution"
+                plot: "bar"
+                required_columns: null
+              # - id: "dataset_token_oov_rate"
+              #   label: "Dataset OOV (Core Tokens)"
+              #   plot: "table"
+              #   required_columns: null
+              - id: "entity_tag_token_oov_rate"
+                label: "Entity-Tag OOV (Core Tokens)"
+                plot: "bar"
+                required_columns: null
+
+          - id: "overlap"
+            label: "Overlap Analysis"
+            figures:
+              - id: "word_type_overlap_train"
+                label: "Word Type Overlap (Train Split)"
+                plot: "heatmap"
+                required_columns: null
+              - id: "word_type_overlap_test"
+                label: "Word Type Overlap (Test Split)"
+                plot: "heatmap"
+                required_columns: null
+              - id: "token_type_overlap_train"
+                label: "Token Type Overlap (Train Split)"
+                plot: "heatmap"
+                required_columns: null
+              - id: "token_type_overlap_test"
+                label: "Token Type Overlap (Test Split)"
+                plot: "heatmap"
+                required_columns: null
+
+          - id: "token_level_behaviour"
+            label: "Token-level Behaviour Metrics"
+            figures:
+              - id: "tokenization_rate"
+                label: "Tokenisation Rate"
+                plot: "bar"
+                required_columns: null
+              - id: "ambiguity"
+                label: "Ambiguity (Token & Word)"
+                plot: "bar"
+                required_columns: null
+              - id: "consistency_metrics"
+                label: "Consistency vs Inconsistency"
+                plot: "bar"
+                required_columns: null
+
+      - id: "model"
+        label: "Model Component"
+        analyses:
+          - id: "output_layer"
+            label: "Output Layer"
+            figures:
+              - id: "loss"
+                label: "Loss"
+                plot: "bar"
+                required_columns: null
+              - id: "prediction_uncertainty"
+                label: "Prediction Uncertainty"
+                plot: "bar"
+                required_columns: null
+              - id: "per_class_confidence"
+                label: "Pre-Class Confidence"
+                plot: "bar"
+              - id: "token_confidence"
+                label: "Token Confidence"
+                plot: "bar"
+                required_columns: null
+              - id: "confidence_confusion"
+                label: "Confidence Confusion"
+                plot: "heatmap"
+                required_columns: null
+
+          - id: "representation_layer"
+            label: "Representation Layer"
+            figures: 
+              - id: "silhouette"
+                label: "Silhouette Scores"
+                plot: "bar"
+                required_columns: null
+
+      - id: "evaluation"
+        label: "Evaluation Metrics"
+        analyses:
+        - id: "agregate_level"
+          label: "Aggregate Level"
           figures:
-            - id: "dataset_stats"
-              label: "Dataset Stats"
+            - id: "overall_token_vs_entity"
+              label: "Overall Token vs Entity"
               plot: "table"
               required_columns: null
+            - id: "overall_span_schemes"
+              label: "Overall Annotation Schemes"
+              plot: "table"
+              required_columns: null
+        - id: "span_level"
+          label: "Span Level"
+          figures: 
+            - id: "span_f1"
+              label: "F1-score"
+              plot: "bar"
+              required_columns: null
+            - id: "span_precision_recall"
+              label: "Precision & Recall"
+              plot: "bar"
+              required_columns: null
+            - id: "span_support"
+              label: "Support"
+              plot: "bar"
+              required_columns: null
+            - id: "span_prediction_outcomes"
+              label: "Prediction Outcomes"
+              plot: "bar"
+              required_columns: nullsss
 
-    # statistics_columns:
-    #   - "Losses"
-    #   - "True Silhouette Score"
-    #   - "Pred Silhouette Score"
-    #   - "Consistency Count"
-    #   - "Consistency Ratio"
-    #   - "Inconsistency Count"
-    #   - "Inconsistency Ratio"
-    #   - "Local Token Entropy"
-    #   - "Normalized Token Entropy"
-    #   - "Dataset Token Entropy"
-    #   - "Local Word Entropy"
-    #   - "Normalized Word Entropy"
-    #   - "Dataset Word Entropy"
-    #   - "Tokenization Rate"
-    #   - "O Confidence"
-    #   - "B-PER Confidence"
-    #   - "I-PER Confidence"
-    #   - "B-ORG Confidence"
-    #   - "I-ORG Confidence"
-    #   - "B-LOC Confidence"
-    #   - "I-LOC Confidence"
-    #   - "B-MISC Confidence"
-    #   - "I-MISC Confidence"
-    #   - "Token Confidence"
-    #   - "Prediction Entropy"
-    #   - "Normalized Prediction Entropy"
-    #   - "Variability"
-    # categorical_columns:
-    #   - "True Labels"
-    #   - "Pred Labels"
-    #   - "Agreements"
-    #   - "Error Type"
-    #   - "True Entities"
-    #   - "Strict True Entities"
-    #   - "True Aligned Scheme"
-    #   - "Pred Entities"
-    #   - "Strict Pred Entities"
-    #   - "Pred Aligned Scheme"
-    # results:
-    #   - Training Results
-    #   - Clustering Results
-    #   - Token-Level Report
-    #   - Entity-Level Report
-    #   - Entity-Level Strict Report
-    # custom_analysis:
-    #   - Token Variability
-    #   - Word Variability
-    #   - Tag Ambiguity 
-    #   - Token Length Distribution
-    #   - Sentence Length Distribution 
-    #   - Tokenization Error Rate Analysis
-    # coefficients:
-    #   - Pearson
-    #   - Spearman
-    # correlation_columns:
-    #   - "Losses"
-    #   - "True Silhouette Score"
-    #   - "Pred Silhouette Score"
-    #   - "Consistency Count"
-    #   - "Consistency Ratio"
-    #   - "Inconsistency Count"
-    #   - "Inconsistency Ratio"
-    #   - "Local Token Entropy"
-    #   - "Normalized Token Entropy"
-    #   - "Dataset Token Entropy"
-    #   - "Local Word Entropy"
-    #   - "Normalized Word Entropy"
-    #   - "Dataset Word Entropy"
-    #   - "Tokenization Rate"
-    #   - "Prediction Entropy"
-    #   - "Normalized Prediction Entropy"
-    #   - "Token Confidence"
-    #   - "Variability"
-    #   - "O Confidence"
-    #   - "B-PER Confidence"
-    #   - "I-PER Confidence"
-    #   - "B-ORG Confidence"
-    #   - "I-ORG Confidence"
-    #   - "B-LOC Confidence"
-    #   - "I-LOC Confidence"
-    #   - "B-MISC Confidence"
-    #   - "I-MISC Confidence"
+        - id: "token_level"
+          label: "Token Level"
+          figures: 
+            - id: "token_f1"
+              label: "F1-score"
+              plot: "bar"
+              required_columns: null
+            - id: "token_precision_recall"
+              label: "Precision & Recall"
+              plot: "bar"
+              required_columns: null
+            - id: "token_support"
+              label: "Support"
+              plot: "bar"
+              required_columns: null
+            - id: "token_prediction_outcomes"
+              label: "Prediction Outcomes"
+              plot: "bar"
+              required_columns: null
+            - id: "token_support_correlations"
+              label: "Support ↔ Metric Correlations"
+              plot: "heatmap"
+              required_columns: null
+            - id: "token_support_scatter"
+              label: "Token Suppport Scatter"
+              plot: "heatmap"
+              required_columns: null
+            - id: "token_spearman"
+              label: "Token Spearman Contribution"
+              plot: "heatmap"
+              required_columns: null
+            # - id: "token_support_scatter_ar"
+            #   label: "Token Suppport Scatter - Arabic"
+            #   plot: "heatmap"
+            #   required_columns: null
+            # - id: "token_support_scatter_en"
+            #   label: "Token Suppport Scatter - English"
+            #   plot: "heatmap"
+            #   required_columns: null
+            # - id: "token_spearman_ar"
+            #   label: "Token Spearman Contribution - Arabic"
+            #   plot: "heatmap"
+            #   required_columns: null
+            # - id: "token_spearman_en"
+            #   label: "Token Spearman Contribution - English"
+            #   plot: "heatmap"
+            #   required_columns: null
+
+
+        - id: "error_analysis"
+          label: "Error Analysis"
+          figures: 
+            - id: "span_prediction_errors"
+              label: "Prediction Errors"
+              plot: "heatmap"
+              required_columns: null
+            - id: "span_error_types"
+              label: "Error Type Breakdown"
+              plot: "bar"
+              required_columns: null
+            - id: "span_error_types_fp"
+              label: "False Positive - Error Types"
+              plot: "heatmap"
+              required_columns: null
+            - id: "span_error_types_fn"
+              label: "False Negative - Error Types"
+              plot: "heatmap"
+              required_columns: null
+            - id: "span_entity_errors_fp_heatmap"
+              label: "False Positive - Entity Errors"
+              plot: "heatmap"
+              required_columns: null
+            - id: "span_entity_errors_fn_heatmap"
+              label: "False Negative - Entity Errors "
+              plot: "heatmap"
+              required_columns: null
+            - id: "token_confusion_heatmap"
+              label: "Token Confusion Matrix"
+              plot: "heatmap"
+              required_columns: null
+            
   qualitative_tab:
     model_type:
       - Pre-trained Model
