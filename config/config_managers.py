@@ -93,8 +93,8 @@ class DashboardConfigManager:
         return self.config.get("dashboard", {}).get("variants", {})
 
     @property
-    def quantitative(self) -> Dict:
-        return self.config.get("dashboard", {}).get("quantitative_tab", {})
+    def cross_component(self) -> Dict:
+        return self.config.get("dashboard", {}).get("cross_component_tab", {})
 
     @property
     def qualitative(self) -> Dict:
