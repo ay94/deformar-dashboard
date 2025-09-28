@@ -175,90 +175,102 @@ dashboard:
       attention_similarity_heatmap:
         folder: extractions/matrices
         format: json
-  quantitative_tab:
-    statistics_columns:
-      - "Losses"
-      - "True Silhouette Score"
-      - "Pred Silhouette Score"
-      - "Consistency Count"
-      - "Consistency Ratio"
-      - "Inconsistency Count"
-      - "Inconsistency Ratio"
-      - "Local Token Entropy"
-      - "Normalized Token Entropy"
-      - "Dataset Token Entropy"
-      - "Local Word Entropy"
-      - "Normalized Word Entropy"
-      - "Dataset Word Entropy"
-      - "Tokenization Rate"
-      - "O Confidence"
-      - "B-PER Confidence"
-      - "I-PER Confidence"
-      - "B-ORG Confidence"
-      - "I-ORG Confidence"
-      - "B-LOC Confidence"
-      - "I-LOC Confidence"
-      - "B-MISC Confidence"
-      - "I-MISC Confidence"
-      - "Token Confidence"
-      - "Prediction Entropy"
-      - "Normalized Prediction Entropy"
-      - "Variability"
-    categorical_columns:
-      - "True Labels"
-      - "Pred Labels"
-      - "Agreements"
-      - "Error Type"
-      - "True Entities"
-      - "Strict True Entities"
-      - "True Aligned Scheme"
-      - "Pred Entities"
-      - "Strict Pred Entities"
-      - "Pred Aligned Scheme"
-    results:
-      - Training Results
-      - Clustering Results
-      - Token-Level Report
-      - Entity-Level Report
-      - Entity-Level Strict Report
-    custom_analysis:
-      - Token Variability
-      - Word Variability
-      - Tag Ambiguity 
-      - Token Length Distribution
-      - Sentence Length Distribution 
-      - Tokenization Error Rate Analysis
-    coefficients:
-      - Pearson
-      - Spearman
-    correlation_columns:
-      - "Losses"
-      - "True Silhouette Score"
-      - "Pred Silhouette Score"
-      - "Consistency Count"
-      - "Consistency Ratio"
-      - "Inconsistency Count"
-      - "Inconsistency Ratio"
-      - "Local Token Entropy"
-      - "Normalized Token Entropy"
-      - "Dataset Token Entropy"
-      - "Local Word Entropy"
-      - "Normalized Word Entropy"
-      - "Dataset Word Entropy"
-      - "Tokenization Rate"
-      - "Prediction Entropy"
-      - "Normalized Prediction Entropy"
-      - "Token Confidence"
-      - "Variability"
-      - "O Confidence"
-      - "B-PER Confidence"
-      - "I-PER Confidence"
-      - "B-ORG Confidence"
-      - "I-ORG Confidence"
-      - "B-LOC Confidence"
-      - "I-LOC Confidence"
-      - "B-MISC Confidence"
-      - "I-MISC Confidence"
+  cross_component_tab:
+    components:
+    - id: "data"
+      label: "Data Component"
+      analyses:
+        - id: "structural"
+          label: "Structural Analysis"
+          figures:
+            - id: "dataset_stats"
+              label: "Dataset Stats"
+              plot: "table"
+              required_columns: null
+
+    # statistics_columns:
+    #   - "Losses"
+    #   - "True Silhouette Score"
+    #   - "Pred Silhouette Score"
+    #   - "Consistency Count"
+    #   - "Consistency Ratio"
+    #   - "Inconsistency Count"
+    #   - "Inconsistency Ratio"
+    #   - "Local Token Entropy"
+    #   - "Normalized Token Entropy"
+    #   - "Dataset Token Entropy"
+    #   - "Local Word Entropy"
+    #   - "Normalized Word Entropy"
+    #   - "Dataset Word Entropy"
+    #   - "Tokenization Rate"
+    #   - "O Confidence"
+    #   - "B-PER Confidence"
+    #   - "I-PER Confidence"
+    #   - "B-ORG Confidence"
+    #   - "I-ORG Confidence"
+    #   - "B-LOC Confidence"
+    #   - "I-LOC Confidence"
+    #   - "B-MISC Confidence"
+    #   - "I-MISC Confidence"
+    #   - "Token Confidence"
+    #   - "Prediction Entropy"
+    #   - "Normalized Prediction Entropy"
+    #   - "Variability"
+    # categorical_columns:
+    #   - "True Labels"
+    #   - "Pred Labels"
+    #   - "Agreements"
+    #   - "Error Type"
+    #   - "True Entities"
+    #   - "Strict True Entities"
+    #   - "True Aligned Scheme"
+    #   - "Pred Entities"
+    #   - "Strict Pred Entities"
+    #   - "Pred Aligned Scheme"
+    # results:
+    #   - Training Results
+    #   - Clustering Results
+    #   - Token-Level Report
+    #   - Entity-Level Report
+    #   - Entity-Level Strict Report
+    # custom_analysis:
+    #   - Token Variability
+    #   - Word Variability
+    #   - Tag Ambiguity 
+    #   - Token Length Distribution
+    #   - Sentence Length Distribution 
+    #   - Tokenization Error Rate Analysis
+    # coefficients:
+    #   - Pearson
+    #   - Spearman
+    # correlation_columns:
+    #   - "Losses"
+    #   - "True Silhouette Score"
+    #   - "Pred Silhouette Score"
+    #   - "Consistency Count"
+    #   - "Consistency Ratio"
+    #   - "Inconsistency Count"
+    #   - "Inconsistency Ratio"
+    #   - "Local Token Entropy"
+    #   - "Normalized Token Entropy"
+    #   - "Dataset Token Entropy"
+    #   - "Local Word Entropy"
+    #   - "Normalized Word Entropy"
+    #   - "Dataset Word Entropy"
+    #   - "Tokenization Rate"
+    #   - "Prediction Entropy"
+    #   - "Normalized Prediction Entropy"
+    #   - "Token Confidence"
+    #   - "Variability"
+    #   - "O Confidence"
+    #   - "B-PER Confidence"
+    #   - "I-PER Confidence"
+    #   - "B-ORG Confidence"
+    #   - "I-ORG Confidence"
+    #   - "B-LOC Confidence"
+    #   - "I-LOC Confidence"
+    #   - "B-MISC Confidence"
+    #   - "I-MISC Confidence"
   qualitative_tab:
     model_type:
       - Pre-trained Model
