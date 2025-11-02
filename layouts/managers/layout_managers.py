@@ -57,10 +57,9 @@ def generate_variant_dropdown_options(columns):
 
 def generate_language_options(columns):
     variant_to_label = {
+        "combined": "Combined",
         "ANERCorp_CamelLab_arabertv02": "Arabic",
         "conll2003_bert": "English",
-        "combined": "Combined",
-        
         # Add more mappings here if needed
     }
     
