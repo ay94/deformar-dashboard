@@ -24,7 +24,8 @@ from managers.plotting.cross_component_plotting_managers import (
     plot_token_confusion_heatmap,
     plot_support_corr_heatmaps, 
     plot_support_vs_metric_scatter,
-    plot_spearman_rankdiff_bars
+    plot_spearman_rankdiff_bars,
+    ttr,
     )
 from managers.tabs.tab_managers import BaseTabManager
 from pathlib import Path
@@ -140,8 +141,8 @@ class DataTabManager(BaseTabManager):
             df=df,
             metric='TWR',
             text='TWR',
-            title='Type-to-Word Ratio (TWR) Across Entity Tags in ANERCorp and CoNLL-2003 (Train and Test Splits)',
-            tag_order=_DEFAULT_TAGS
+            title='Type-to-Word Ratio (TWR) Across Entity Tags in Arabic and Engilsh (Train and Test Splits)',
+            tag_order=_DEFAULT_TAGS,
         )
     
     def generate_word_type_frequency_distribution(self, selected_variant: str) -> html.Div:
@@ -161,7 +162,7 @@ class DataTabManager(BaseTabManager):
         df = self.entity_tag_oov_rate_helper.generate_df(selected_variant)
         return plot_entity_tag_oov_bar(
             df,
-            title="Entity Tag OOV Rate (Train→Test) Across Datasets",
+            title="Entity Tag Word Level OOV Rate Across Arabic and English",
             tag_order=_DEFAULT_TAGS,
             show_values=True,
         )
@@ -178,21 +179,19 @@ class DataTabManager(BaseTabManager):
         df = self.entity_tag_token_type_helper.generate_df(selected_variant)
         return plot_faceted_bar_chart(
             df=df,
-            metric="Tokens Proportion",        # or "TTR" depending on the figure
+            metric="Type Proportion",        # or "TTR" depending on the figure
             text="Tag Types",
-            title="Entity Tag Token-Type Distribution (Tokens, Types, TTR)",
-            tag_order=_DEFAULT_TAGS
+            title="Entity Tag Token Types Distribution Across Training and Testing Splits",
+            tag_order=_DEFAULT_TAGS,
         )
 
     def generate_type_to_token_ratio(self, selected_variant: str) -> html.Div:
-        df = self.entity_tag_token_type_helper.generate_df(selected_variant)
+        df = self.entity_tag_token_type_helper.generate_df(selected_variant)        
         # reuse the same plot function, switch metric
-        return plot_faceted_bar_chart(
+        return ttr(
             df=df,
-            metric="TTR",
-            text="TTR",
-            title="Type-to-Token Ratio (TTR) per Entity Tag",
-            tag_order=_DEFAULT_TAGS
+            height=700, width=1400,
+            tag_order=_DEFAULT_TAGS,
         )
 
     def generate_token_type_frequency_distribution(self, selected_variant: str) -> html.Div:
@@ -213,6 +212,7 @@ class DataTabManager(BaseTabManager):
         # proportion on y; counts as text labels
         return plot_entity_tag_oov_bar(
             df,
+            title="Entity Tag Token Level OOV Rate Across Arabic and English",
             tag_order=_DEFAULT_TAGS,
             percent_axis=False,   # keep proportions as decimals; set True if you want % axis
             text_digits=3,        # or 3, your call
@@ -263,7 +263,7 @@ class DataTabManager(BaseTabManager):
         df = self.tokenisation_rate_helper.generate_df(selected_variant)
         return plot_token_behaviour_bar(
             df,
-            title="Tokenisation Rate per Tag",
+            title="Tokenisation Rate per Entity Tag",
             facet_by_level=False,
             facet_by_split=False,
             tag_order=_DEFAULT_TAGS + ["O"],
@@ -274,7 +274,7 @@ class DataTabManager(BaseTabManager):
         df = self.ambiguity_helper.generate_df(selected_variant)
         return plot_token_behaviour_bar(
             df,
-            title="Ambiguity by Tag (Token vs Word; Mean ± SD)",
+            title="Ambiguity by Entity Tag (Token vs Word; Mean ± SD)",
             facet_by_level=True,            # facet rows by Level
             facet_by_split=False,           # no column facets
             tag_order=_DEFAULT_TAGS + ["O"],
@@ -288,7 +288,7 @@ class DataTabManager(BaseTabManager):
         df = self.consistency_helper.generate_df(selected_variant)
         return plot_token_behaviour_bar(
             df,
-            title="Consistency vs Inconsistency by Tag (Mean ± SD)",
+            title="Consistency vs Inconsistency by Entity Tag (Mean ± SD)",
             facet_by_level=True,
             facet_by_split=False,
             tag_order=_DEFAULT_TAGS + ["O"],
@@ -340,7 +340,7 @@ class ModelTabManager(BaseTabManager):
         df = self.prediction_uncertainty_helper.generate_df(selected_variant)
         return plot_token_behaviour_bar(
             df,
-            title="Prediction Uncertainty by Tag (Correct vs Error; Mean ± SD)",
+            title="Entity Tag Prediction Uncertainty (Correct vs Error; Mean ± SD)",
             tag_order=_DEFAULT_TAGS + ["O"],
             level_order=["Correct", "Error"],     # color legend order
             color_col="Type",                     # colors reflect Correct vs Error
@@ -357,7 +357,7 @@ class ModelTabManager(BaseTabManager):
         df = self.per_class_conf_helper.generate_df(selected_variant, include_all=False)
         return plot_token_behaviour_bar(
             df,
-            title="Per-Class Confidence (Mean ± SD)",
+            title="Per-Class Confidence Scores Across Entity Tags and Correct and Error Predictions (Mean ± SD)",
             tag_order=_DEFAULT_TAGS + ["O"],
             level_order=["Correct", "Error"],   # optional: include "All" if you passed include_all=True
             color_col="Type",                   # colors = Correct vs Error
@@ -372,7 +372,7 @@ class ModelTabManager(BaseTabManager):
         df = self.token_conf_helper.generate_df(selected_variant, include_all=False)
         return plot_token_behaviour_bar(
             df,
-            title="Token Confidence (Mean ± SD)",
+            title="Token Confidence Per Entity Tag Across Correct and Error (Mean ± SD)",
             tag_order=_DEFAULT_TAGS + ["O"],
             level_order=["Correct", "Error"],  # Agreements split
             color_col="Type",
@@ -392,7 +392,7 @@ class ModelTabManager(BaseTabManager):
         )
         return plot_confidence_heatmaps_px(
             df,
-            title="Confidence Confusion Heatmap (Mean Confidence on Errors)",
+            title="Total Token Confidence Confusion Heatmap",
             panel_by="Language",
             value_col="Overlap Count",
             tag_order=_DEFAULT_TAGS + ["O"],
@@ -445,11 +445,13 @@ class EvaluationTabManager(BaseTabManager):
         return plot_metric_bar(
             df,
             metric_col="F1-score",
-            title="F1 Score by Entity Type (IOB1 vs IOB2)",
+            title="F1 by Entity Span across Languages and Annotation Schemes (IOB1 vs IOB2)",
             color="Scheme",        # compare IOB1 vs IOB2
             facet_col="Language",  # one row per language/model
+            x_axis_title='Entity Span',
             height=HEIGHT,
             width=WIDTH,
+            y_as_percent=False
         )
     
     def generate_span_precision_recall(self, selected_variant: str) -> html.Div:
@@ -457,21 +459,23 @@ class EvaluationTabManager(BaseTabManager):
         return plot_metric_bar(
             df=df,
             metric_col="Value",
-            title="Precision & Recall by Entity Type (IOB1 vs IOB2)",
+            title="Precision & Recall by Entity Span across Languages and Annotation Schemes (IOB1 vs IOB2)",
             color="Metric",          # Precision vs Recall are colored
             facet_row="Scheme",      # IOB1 / IOB2 in rows
             facet_col="Language",    # Arabic / English in columns
+            x_axis_title='Entity Span',
+            y_axis_title='Score',
             height=HEIGHT,
             width=WIDTH,
             text_round=3
         )
     
     def generate_span_support(self, selected_variant: str):
-        df = self.span_suppport_helper.generate_df(selected_variant, round_to=3)
+        df = self.span_support_helper.generate_df(selected_variant, round_to=3)
         return plot_metric_bar(
             df=df,
             metric_col="Support",
-            title="Support Counts by Entity Type (IOB1 vs IOB2)",
+            title="Support Counts by Entity Span across Languages and Annotation Schemes (IOB1 vs IOB2)",
             color="Scheme",         # color by scheme
             facet_col="Language",   # rows = Arabic / English
             height=HEIGHT,
@@ -484,7 +488,7 @@ class EvaluationTabManager(BaseTabManager):
         return plot_metric_bar(
             df=df,
             metric_col="Scale",   # proportions on Y
-            title="TP/FP/FN Breakdown by Entity & Scheme",
+            title="Entity Span prediction outcomes (TP, FP, FN) by language and annotation scheme (IOB1 vs IOB2)",
             color="Metric",       # TP vs FP vs FN
             facet_row="Scheme",   # IOB1 / IOB2 rows
             facet_col="Language", # Arabic / English columns (or use Model if you prefer)
@@ -506,7 +510,7 @@ class EvaluationTabManager(BaseTabManager):
             tag_order=_DEFAULT_ENTITY_SPANS,
             metric_order=["FN", "FP"],
             colorscale="RdBu_r",
-            title="FP/FN Breakdown by Entity Span (rows=Scheme, cols=Language)",
+            title="Entity Span false positives and false negatives by Annotation Scheme and Language",
             height=HEIGHT,
             width=WIDTH,
         )
@@ -520,8 +524,9 @@ class EvaluationTabManager(BaseTabManager):
         return plot_metric_bar(
             df=df,                   # from your ErrorType helper
             metric_col="Percentage",
-            title="Distribution of Error Types within FP/FN across Models and Schemes",
+            title="Distribution of Error Types within FP/FN across Langauges and Annotation Schemes (IOB1 vs IOB2)",
             x_col="Error Type",              # <— key change
+            x_axis_title='Error Type',
             color="Component",               # False Positives / False Negatives
             facet_row="Scheme",
             facet_col="Language",
@@ -529,7 +534,7 @@ class EvaluationTabManager(BaseTabManager):
             color_map=color_map,   # << now works
             height=HEIGHT, width=WIDTH, text_round=0
         )
-     
+    
     def generate_span_error_types_fp(self, selected_variant: str) -> html.Div:
         df = self.span_error_types_heatmap_helper.generate_df(selected_variant, "false_positives")
         return plot_span_confusion_heatmap(
@@ -538,14 +543,14 @@ class EvaluationTabManager(BaseTabManager):
             text_col="Count",
             row_by="Scheme",
             col_by="Language",
-            tag_order=["LOC","MISC","ORG","PER"],   # entities
-            metric_order=["Entity","Boundary","Entity and Boundary","O Errors"],
-            title="Error Type Heatmap – False Positives",
+            tag_order=_DEFAULT_ENTITY_SPANS,
+            metric_order=["Entity", "Boundary", "Entity and Boundary", "O (Inclusion)"],
+            title="False Positive Error Types by Entity Span (rows=Scheme, cols=Language)",
             colorscale="RdBu_r",
             height=HEIGHT,
             width=WIDTH,
         )
-    
+
     def generate_span_error_types_fn(self, selected_variant: str) -> html.Div:
         df = self.span_error_types_heatmap_helper.generate_df(selected_variant, "false_negatives")
         return plot_span_confusion_heatmap(
@@ -554,19 +559,52 @@ class EvaluationTabManager(BaseTabManager):
             text_col="Count",
             row_by="Scheme",
             col_by="Language",
-            tag_order=["LOC","MISC","ORG","PER"],   # entities
-            metric_order=["Entity","Boundary","Entity and Boundary","O Errors"],
-            title="Error Type Heatmap – False Negatives",
+            tag_order=_DEFAULT_ENTITY_SPANS,
+            metric_order=["Entity", "Boundary", "Entity and Boundary", "O (Exclusion)"],
+            title="False Negative Error Types by Entity Span (rows=Scheme, cols=Language)",
             colorscale="RdBu_r",
             height=HEIGHT,
             width=WIDTH,
         )
+
+
+    # def generate_span_error_types_fp(self, selected_variant: str) -> html.Div:
+    #     df = self.span_error_types_heatmap_helper.generate_df(selected_variant, "false_positives")
+    #     return plot_span_confusion_heatmap(
+    #         df=df,
+    #         value_col="Count",
+    #         text_col="Count",
+    #         row_by="Scheme",
+    #         col_by="Language",
+    #         tag_order=_DEFAULT_ENTITY_SPANS,
+    #         metric_order=["Entity","Boundary","Entity and Boundary","O Errors"],
+    #         title="False Positives Error Type Heatmap: by Entity Span, Categorized by Language and Annotation Scheme",
+    #         colorscale="RdBu_r",
+    #         height=HEIGHT,
+    #         width=WIDTH,
+    #     )
+    
+    # def generate_span_error_types_fn(self, selected_variant: str) -> html.Div:
+    #     df = self.span_error_types_heatmap_helper.generate_df(selected_variant, "false_negatives")
+    #     return plot_span_confusion_heatmap(
+    #         df=df,
+    #         value_col="Count",
+    #         text_col="Count",
+    #         row_by="Scheme",
+    #         col_by="Language",
+    #         tag_order=_DEFAULT_ENTITY_SPANS,
+    #         metric_order=["Entity","Boundary","Entity and Boundary","O Errors"],
+    #         title="False Negatives Error Type Heatmap: by Entity Span, Categorized by Language and Annotation Scheme",
+    #         colorscale="RdBu_r",
+    #         height=HEIGHT,
+    #         width=WIDTH,
+    #     )
     
     def generate_span_entity_errors_fp(self, selected_variant: str) -> html.Div:
         df = self.span_entity_errors_helper.generate_df(selected_variant, component="false_positives")
         return plot_entity_errors_heatmap(
             df,
-            title="False Positives Entity Errors Heatmap: by Entity Span, Categorized by Language and Tagging Scheme",
+            title="False Positives Entity Errors by Entity Span (rows=Scheme, cols=Language)",
             row_by="Scheme",
             col_by="Language",
             tag_order=["LOC", "PER", "ORG", "MISC"],
@@ -578,18 +616,20 @@ class EvaluationTabManager(BaseTabManager):
         df = self.span_entity_errors_helper.generate_df(selected_variant, component="false_negatives")
         return plot_entity_errors_heatmap(
             df,
-            title="False Negatives Entity Errors Heatmap: by Entity Span, Categorized by Language and Tagging Scheme",
+            title="False Negatives Entity Errors by Entity Span (rows=Scheme, cols=Language)",
             row_by="Scheme",
             col_by="Language",
             tag_order=["LOC", "PER", "ORG", "MISC"],
             height=HEIGHT,
             width=WIDTH,
         )
-    
+
     def generate_token_f1(self, variant: str) -> html.Div:
         df = self.token_f1_helper.generate_df(variant, round_to=3)
         return plot_metric_bar(
-            df=df, metric_col="F1-score", title="Token-level F1 by Tag",
+            df=df, metric_col="F1-score", 
+            title="Token-level F1-Score by Entity Tag Across Languages",
+            x_axis_title="Entity Tag",
             facet_row="Language", tag_order=_DEFAULT_TAGS, y_as_percent=False,   # 👈 force decimals
         )
 
@@ -597,7 +637,9 @@ class EvaluationTabManager(BaseTabManager):
     def generate_token_pr_rc(self, variant: str) -> html.Div:
         df = self.token_pr_rec_helper.generate_df(variant, round_to=3)
         return plot_metric_bar(
-            df=df, metric_col="Score", title="Token-level Precision & Recall by Tag",
+            df=df, metric_col="Score", 
+            title="Token-level Precision & Recall by Entity Tag Across Languages",
+            x_axis_title="Entity Tag",
             color="Metric", facet_row="Language", tag_order=_DEFAULT_TAGS, y_as_percent=False,   # 👈 force decimals
         )
 
@@ -605,7 +647,9 @@ class EvaluationTabManager(BaseTabManager):
     def generate_token_support(self, variant: str) -> html.Div:
         df = self.token_support_helper.generate_df(variant)
         return plot_metric_bar(
-            df=df, metric_col="Support", title="Token-level Support by Tag",
+            df=df, metric_col="Support", 
+            title="Token-level Support Counts by Entity Tag Across Languages",
+            x_axis_title="Entity Tag",
             color=None, facet_row="Language", text_round=0,
             tag_order=_DEFAULT_TAGS, 
         )
@@ -615,7 +659,7 @@ class EvaluationTabManager(BaseTabManager):
         return plot_metric_bar(
             df=df,
             metric_col="Scaled Count",
-            title="Token-level Prediction Outcomes (TP/FP/FN)",
+            title="Token-level prediction outcomes (TP, FP, FN) by Language",
             x_col="Tag",
             color="Metric",
             facet_row="Language",
@@ -637,6 +681,7 @@ class EvaluationTabManager(BaseTabManager):
    
     def generate_token_support_correlations(self, variant: str) -> html.Div:
         df = self.token_support_corr_helper.generate_df(round_to=3)
+        print(df)
         return plot_support_corr_heatmaps(df, height=HEIGHT, width=WIDTH)
     
     def generate_token_support_scatter(self, variant: str) -> html.Div:
@@ -652,7 +697,7 @@ class EvaluationTabManager(BaseTabManager):
     def generate_token_spearman(self, variant: str) -> html.Div:
         language = self.token_support_scatter_helper.ds_label(variant)
         df = self.token_spearman_helper.generate_for_language(variant, language)
-        return plot_spearman_rankdiff_bars(df, tag_order=_DEFAULT_TAGS, height=HEIGHT, width=WIDTH)
+        return plot_spearman_rankdiff_bars(df, tag_order=_DEFAULT_TAGS, height=HEIGHT, width=WIDTH, language=language)
 
 
 
