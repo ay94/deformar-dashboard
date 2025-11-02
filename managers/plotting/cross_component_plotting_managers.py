@@ -142,6 +142,8 @@ def plot_faceted_bar_chart(
 
     # ---- looks like proportion? ----
     is_num = pd.api.types.is_numeric_dtype(df[metric])
+    PERCENT_METRICS = {"Tokens Proportion", "Type Proportion"}
+    looks_like_prop = metric in PERCENT_METRICS
     looks_like_prop = bool(is_num and df[text].ge(0).all() and df[text].le(1).all())
     y_label = "Proportion" if looks_like_prop else metric
     x_label = "Entity Tag" if x_col == "Tag" else x_col
@@ -611,7 +613,7 @@ def plot_entity_tag_oov_bar(
     if percent_axis and looks_like_prop:
         fig.update_yaxes(tickformat=".0%", rangemode="tozero", title="OOV Rate (%)")
     else:
-        fig.update_yaxes(rangemode="tozero", title="OOV Rate (proportion)" if looks_like_prop else oov_rate_col)
+        fig.update_yaxes(rangemode="tozero", title="OOV Rate (Rate)" if looks_like_prop else oov_rate_col)
 
     fig.update_layout(
         template="plotly_white",
@@ -1002,7 +1004,7 @@ def plot_confidence_heatmaps_px(
     tag_order: list[str] | None = None,    # enforce axis order
     colorscale: str = "RdBu_r",
     value_precision: int = 2,
-    shared_scale: bool = True,
+    shared_scale: bool = False,
 ) -> html.Div:
     needed = {"Tag1", "Tag2", value_col}
     if not needed.issubset(df.columns):
@@ -1022,8 +1024,8 @@ def plot_confidence_heatmaps_px(
         present = set(d["Tag1"]).union(d["Tag2"])
         tags = [t for t in tag_order if t in present]
 
-    d["Tag1"] = pd.Categorical(d["Tag1"], categories=tags, ordered=True)
-    d["Tag2"] = pd.Categorical(d["Tag2"], categories=tags, ordered=True)
+    d["True Entity Tag"] = pd.Categorical(d["Tag1"], categories=tags, ordered=True)
+    d["Predicted Entity Tag"] = pd.Categorical(d["Tag2"], categories=tags, ordered=True)
 
     # Shared color scale across facets (optional but nice)
     range_color = None
@@ -1038,12 +1040,12 @@ def plot_confidence_heatmaps_px(
     # Simple PX heatmap (uses your pre-aggregated values)
     fig = px.density_heatmap(
         d,
-        x="Tag2",
-        y="Tag1",
+        x="Predicted Entity Tag",
+        y="True Entity Tag",
         z=value_col,                 # we already aggregated; PX will just place values
         facet_col=panel_by,          # one panel per language
         color_continuous_scale=colorscale,
-        category_orders={"Tag1": tags, "Tag2": tags},
+        category_orders={"True Entity Tag": tags, "Predicted Entity Tag": tags},
         range_color=range_color,
         title=title,
     )
@@ -1059,7 +1061,7 @@ def plot_confidence_heatmaps_px(
     # Cosmetics
     fig.update_layout(
         template="plotly_white",
-        coloraxis_colorbar=dict(title="Mean Confidence"),
+        coloraxis_colorbar=dict(title="Total Confidence"),
         margin=dict(t=60, l=30, r=30, b=30),
         height=800,
         width=max(650, 800 * 2),  # scale with #panels
@@ -1441,6 +1443,8 @@ def plot_metric_bar(
     title: str,
     *,
     x_col: str = "Tag",     
+    x_axis_title="Entity Span",
+    y_axis_title=None,
     color: str = None,
     facet_row: str = None,
     facet_col: str = None,
@@ -1509,18 +1513,30 @@ def plot_metric_bar(
 
     else:
         fig.update_traces(textposition=text_position, textangle=0, cliponaxis=False)
+    
+    if x_axis_title:
+        fig.update_xaxes(title_text=x_axis_title)
 
-    # Decide percent vs decimal on Y axis
-    if y_as_percent is None:
-        looks_like_prop = (
-            pd.api.types.is_numeric_dtype(data[metric_col])
-            and data[metric_col].dropna().between(0, 1).all()
-        )
-    else:
-        looks_like_prop = bool(y_as_percent)
+    if y_axis_title:
+        fig.update_yaxes(title_text=y_axis_title)
 
-    if looks_like_prop:
+    # # Decide percent vs decimal on Y axis
+    # if y_as_percent is None:
+    #     looks_like_prop = (
+    #         pd.api.types.is_numeric_dtype(data[metric_col])
+    #         and data[metric_col].dropna().between(0, 1).all()
+    #     )
+    # else:
+    #     looks_like_prop = bool(y_as_percent)
+
+    # if looks_like_prop:
+    #     fig.update_yaxes(tickformat=".0%")
+
+    # --- handle Y axis formatting explicitly ---
+    if y_as_percent is True:
         fig.update_yaxes(tickformat=".0%")
+    elif y_as_percent is False:
+        fig.update_yaxes(tickformat=".2f")
 
     fig.update_layout(
         height=height, width=width,
@@ -1821,6 +1837,7 @@ def plot_spearman_rankdiff_bars(
     tag_order: list[str] | None = None,
     height: int = 700,
     width: int = 1000,
+    language: str,
 ) -> html.Div:
     d = df.copy()
     if d.empty:
@@ -1828,6 +1845,15 @@ def plot_spearman_rankdiff_bars(
 
     if tag_order:
         d["Tag"] = pd.Categorical(d["Tag"], categories=tag_order, ordered=True)
+    x_col = "Tag"
+    category_orders = {}
+    if tag_order:
+        # keep only categories that actually appear, but preserve requested order
+        cats = [t for t in tag_order if t in d[x_col].astype(str).unique().tolist()]
+        if cats:
+            d[x_col] = pd.Categorical(d[x_col].astype(str), categories=cats, ordered=True)
+            category_orders[x_col] = cats
+    
 
     fig = px.bar(
         d,
@@ -1837,7 +1863,8 @@ def plot_spearman_rankdiff_bars(
         facet_row="Metric",
         text="Squared Rank Difference",
         facet_col_spacing=0.15,
-        title="Squared Rank Differences of Entity Tags",
+        category_orders=category_orders,
+        title=f"Squared Rank Differences of Entity Tags in {language}",
         labels={"Squared Rank Difference": "Squared Rank Diff.", "Tag": "Entity Tag"},
         template="plotly_white",
         barmode="group",
@@ -1952,3 +1979,61 @@ def plot_spearman_rankdiff_bars(
 #         margin=dict(t=60, l=40, r=40, b=40),
 #     )
 #     return html.Div([dcc.Graph(figure=fig, config={"displaylogo": False})])
+
+
+def ttr(df, height, width, tag_order=None):
+    """
+    Plots a faceted bar chart with datasets and splits displayed separately.
+    """
+    color_map = {
+        "B-LOC": "darkgreen",
+        "B-PERS": "deepskyblue",
+        "B-PER": "deepskyblue",
+        "B-ORG": "darkcyan",
+        "B-MISC": "palevioletred",
+        "I-LOC": "yellowgreen",
+        "I-PERS": "lightblue",
+        "I-PER": "lightblue",
+        "I-ORG": "cyan",
+        "I-MISC": "violet",
+        "O": "saddlebrown",
+    }
+
+    category_orders = {}
+    if tag_order:
+        # make sure all expected tags are there, keep provided order
+        present = [t for t in tag_order if t in df["Tag"].unique()]
+        missing = [t for t in tag_order if t not in present]
+        full_order = present + missing
+        category_orders["Tag"] = full_order
+        df = df.copy()
+        df["Tag"] = pd.Categorical(df["Tag"], categories=full_order, ordered=True)
+        
+
+    fig = px.bar(
+        df,
+        x="Tag",
+        y="TTR",
+        color="Tag",
+        facet_col="Language" if "Language" in df.columns else None,
+        facet_row="Split" if "Split" in df.columns else None,
+        color_discrete_map=color_map,
+        text="TTR",
+        title="Type-to-Token Ratio (TTR) Across Entity Tags in Arabic and English (Train and Test Splits)",
+        labels={"Tag": "Entity Tag"},
+        category_orders=category_orders or None,
+    )
+
+    # Update layout for better readability
+    fig.update_layout(
+        template="plotly_white",
+        height=height,
+        width=width,
+        margin=dict(t=60, l=20, r=20, b=20),
+        # title_x=0.5,
+    )
+
+    # Update text formatting
+    fig.update_traces(texttemplate="%{text:.2f}", textposition="outside", cliponaxis=False)
+
+    return html.Div([dcc.Graph(figure=fig)])
