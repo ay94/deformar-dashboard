@@ -89,10 +89,6 @@ class DashboardData:
             self.train_data["True Labels"] = self.train_data["True Labels"].replace(tag_mapping)
         if "Pred Labels" in self.analysis_data.columns:
             self.analysis_data["Pred Labels"] = self.analysis_data["Pred Labels"].replace(tag_mapping)
-        if "Vocabulary Status" in self.analysis_data.columns:
-            self.analysis_data["Vocabulary Status"] = np.where(
-                self.analysis_data["Vocabulary Status"] == -1, "OOV", "IV"
-            )
                         
         if "Error Types" in self.analysis_data.columns:
             self.analysis_data.loc[self.analysis_data["Labels"] == -100, "Error Type"] = "IGNORED"
@@ -132,6 +128,12 @@ class DashboardData:
         ] = DashboardData.normalized_entropy(
             self.analysis_data, "Prediction Entropy", "Prediction Max Entropy"
         )  # filling 0/0 division as it generates Nan
+
+
+        if "Vocabulary Status" not in self.analysis_data.columns:
+            self.analysis_data["Vocabulary Status"] = np.where(
+                self.analysis_data["Token Ambiguity"] == -1, "OOV", "IV"
+            )
 
 
     def is_loaded(self, attribute):

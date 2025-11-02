@@ -17,6 +17,10 @@ class BaseTabManager:
     def get_tab_data(self, key):
         """Retrieve specific data based on a key."""
         return self.data.get(key, None)
+    
+    def get_dataset_tab_data(self, key):
+        """Retrieve specific data based on a key."""
+        return self.data.get(key, None)
 
     def filter_ignored(self, data, label_col="Labels", ignore_label=-100):
         """Filter data based on a provided condition."""
