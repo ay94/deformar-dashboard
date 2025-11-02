@@ -134,7 +134,7 @@ class CrossComponentTab:
       
     def render(self):
         # language selector stays as you had it
-        select_language_container = LanguageSelection(self.variants + ["combined"]).render()
+        select_language_container = LanguageSelection(["combined"] + self.variants).render()
         # Build a section per component present in config
         sections = []
         if not self.components_cfg:
