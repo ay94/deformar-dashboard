@@ -853,13 +853,17 @@ class EntityTagTokenTypeDistribution(BaseDashDataProcessor):
                         .reset_index()
                         .rename(columns={"True Labels": "Tag"})
                 )
+                sum_tag_types = int(per_tag["Tag Types"].sum())
+
 
                 per_tag["TTR"] = np.where(per_tag["Total Tokens"] > 0,
                                           per_tag["Tag Types"] / per_tag["Total Tokens"], 0.0)
                 per_tag["Tokens Proportion"] = np.where(total_ne_tokens > 0,
                                                         per_tag["Total Tokens"] / total_ne_tokens, 0.0)
-                per_tag["Type Proportion"] = np.where(all_ne_unique_token_types > 0,
-                                                      per_tag["Tag Types"] / all_ne_unique_token_types, 0.0)
+                # per_tag["Type Proportion"] = np.where(all_ne_unique_token_types > 0,
+                #                                       per_tag["Tag Types"] / all_ne_unique_token_types, 0.0)
+                per_tag["Type Proportion"] = np.where(sum_tag_types > 0,
+                                                      per_tag["Tag Types"] / sum_tag_types, 0.0)
                 per_tag["Split"] = split_key
                 per_tag["Language"] = ds_lbl
                 rows.append(per_tag)
@@ -1394,7 +1398,10 @@ class ConsistencyHelper(BaseDashDataProcessor):
             return pd.DataFrame(columns=["Tag", "Level", "Mean Value", "Std Dev", "Text Label"])
 
         # keep valid numeric values only
-        df = split_df[["True Labels", value_col]].copy()
+        if "Vocabulary Status" in split_df.columns:
+            df = split_df[split_df["Vocabulary Status"] == "IV"]
+
+        df = df[["True Labels", value_col]].copy()
         df[value_col] = pd.to_numeric(df[value_col], errors="coerce")
         df = df.replace([np.inf, -np.inf], np.nan).dropna(subset=[value_col])
 
@@ -2516,6 +2523,67 @@ class SpanErrorTypesHelper(BaseDashDataProcessor):
 
 
 
+# class SpanErrorTypesHeatmapHelper(BaseDashDataProcessor):
+#     """
+#     Tidy DF for error-type heatmaps.
+#     Output columns:
+#       Language | Scheme | Component (FP/FN) | Tag (Entity) | Metric (Error Type) | Count
+#     """
+
+#     def generate_df(self, selected_variant: str, component: str) -> pd.DataFrame:
+#         """
+#         component ∈ {"false_positives", "false_negatives"}
+#         """
+#         assert component in {"false_positives", "false_negatives"}
+#         # self.build_corpora(selected_variant)
+
+#         rows = []
+#         o_error = "Inclusion" if component == "false_positives" else "Exclusion"
+#         comp_lbl = "False Positives" if component == "false_positives" else "False Negatives"
+
+#         for ds_key, content in self.dash_data.items():
+#             lang_lbl = self.ds_label(ds_key)
+
+#             for scheme, entity_confusion in [
+#                 ("IOB1", getattr(content, "entity_non_strict_confusion_data", {})),
+#                 ("IOB2", getattr(content, "entity_strict_confusion_data", {})),
+#             ]:
+#                 if not entity_confusion or component not in entity_confusion:
+#                     continue
+
+#                 # Process into error categories
+#                 error_types, _ = self.process_entity_confusion(entity_confusion[component], o_error)
+#                 error_types = error_types.rename(columns={o_error: "O Errors"})
+
+#                 # index = entity tag (LOC, ORG, …), cols = error types
+#                 error_types = error_types.reset_index().rename(columns={"index": "Tag"})
+#                 error_types = self.normalize_spans(error_types, col="Tag")  # ✅ normalize tags (PER vs PERS)
+
+
+#                 # Long format: one row per Tag × Error Type
+#                 melted = error_types.melt(
+#                     id_vars="Tag",
+#                     var_name="Metric",    # error type (Entity, Boundary, etc.)
+#                     value_name="Count"
+#                 )
+#                 melted["Language"]  = lang_lbl
+#                 melted["Scheme"]    = scheme
+#                 melted["Component"] = comp_lbl
+
+#                 rows.append(melted)
+
+#         if not rows:
+#             return pd.DataFrame(columns=["Language", "Scheme", "Component", "Tag", "Metric", "Count"])
+
+#         df = pd.concat(rows, ignore_index=True)
+
+#         # enforce consistent error type order
+#         metric_order = ["Entity", "Boundary", "Entity and Boundary", "O Errors"]
+#         df["Metric"] = pd.Categorical(df["Metric"], categories=metric_order, ordered=True)
+
+#         return df
+
+
 class SpanErrorTypesHeatmapHelper(BaseDashDataProcessor):
     """
     Tidy DF for error-type heatmaps.
@@ -2528,11 +2596,12 @@ class SpanErrorTypesHeatmapHelper(BaseDashDataProcessor):
         component ∈ {"false_positives", "false_negatives"}
         """
         assert component in {"false_positives", "false_negatives"}
-        # self.build_corpora(selected_variant)
 
         rows = []
-        o_error = "Inclusion" if component == "false_positives" else "Exclusion"
+        # contextual label for the O-error column
+        o_error_key = "Inclusion" if component == "false_positives" else "Exclusion"
         comp_lbl = "False Positives" if component == "false_positives" else "False Negatives"
+        o_error_label = "O (Inclusion)" if component == "false_positives" else "O (Exclusion)"
 
         for ds_key, content in self.dash_data.items():
             lang_lbl = self.ds_label(ds_key)
@@ -2544,14 +2613,24 @@ class SpanErrorTypesHeatmapHelper(BaseDashDataProcessor):
                 if not entity_confusion or component not in entity_confusion:
                     continue
 
-                # Process into error categories
-                error_types, _ = self.process_entity_confusion(entity_confusion[component], o_error)
-                error_types = error_types.rename(columns={o_error: "O Errors"})
+                # Process confusion data into error categories
+                error_types, _ = self.process_entity_confusion(
+                    entity_confusion[component],
+                    o_error_key   # "Inclusion" or "Exclusion" as the column name returned by processor
+                )
+
+                # Rename contextual O-error to the display label we want in plots
+                error_types = error_types.rename(columns={o_error_key: o_error_label})
 
                 # index = entity tag (LOC, ORG, …), cols = error types
-                error_types = error_types.reset_index().rename(columns={"index": "Tag"})
-                error_types = self.normalize_spans(error_types, col="Tag")  # ✅ normalize tags (PER vs PERS)
+                error_types = (
+                    error_types
+                    .reset_index()
+                    .rename(columns={"index": "Tag"})
+                )
 
+                # normalize entity span labels if needed (e.g., "PERS" -> "PER")
+                error_types = self.normalize_spans(error_types, col="Tag")
 
                 # Long format: one row per Tag × Error Type
                 melted = error_types.melt(
@@ -2570,11 +2649,12 @@ class SpanErrorTypesHeatmapHelper(BaseDashDataProcessor):
 
         df = pd.concat(rows, ignore_index=True)
 
-        # enforce consistent error type order
-        metric_order = ["Entity", "Boundary", "Entity and Boundary", "O Errors"]
+        # enforce consistent error type order — contextual last slot
+        metric_order = ["Entity", "Boundary", "Entity and Boundary", o_error_label]
         df["Metric"] = pd.Categorical(df["Metric"], categories=metric_order, ordered=True)
 
         return df
+
 
 
 class SpanEntityErrorsHeatmapHelper(BaseDashDataProcessor):
@@ -2819,7 +2899,7 @@ class TokenSupportCorrelationHelper(BaseDashDataProcessor):
       Language | Split(train/test) | Method(pearson/spearman) | Metric(Precision/Recall) | Corr
     """
 
-    EXCLUDE = {"O", "micro", "macro", "weighted"}
+    EXCLUDE = {"O", "micro", "accuracy/micro", "macro", "weighted"}
 
     def _make_report_df(self) -> pd.DataFrame:
         rows = []
@@ -2862,6 +2942,8 @@ class TokenSupportCorrelationHelper(BaseDashDataProcessor):
 
         out = []
         for lang, g in data.groupby("Language"):
+            print(lang)
+            print(g)
             for metric in ["Precision", "Recall"]:
                 # Pearson
                 pearson_train = g[["Train Support", metric]].corr().iloc[0, 1]
@@ -3002,7 +3084,6 @@ class TokenSpearmanHelper(BaseDashDataProcessor):
             | Higher Column | Squared Rank Difference
     """
 
-    EXCLUDE = {"O", "micro", "macro", "weighted"}
 
     def generate_df(
         self,
@@ -3031,7 +3112,7 @@ class TokenSpearmanHelper(BaseDashDataProcessor):
             rep = tok.copy()
             if "Tag" in rep.columns:
                 rep["Tag"] = rep["Tag"].replace(_TAG_NORMALIZE)
-                rep = rep[~rep["Tag"].astype(str).str.upper().isin({t.upper() for t in self.EXCLUDE})]
+                rep = rep[~rep["Tag"].astype(str).str.upper().isin({t.upper() for t in EXCLUDE_ROWS})]
 
             if tr is not None and not tr.empty:
                 tr_df = tr[tr["Labels"] != -100]
